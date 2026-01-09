@@ -44,9 +44,19 @@ spec:
               value: "false"
             - name: API_PREFIX
               value: "/api/connectivity"
-            # MongoDB Configuration
+            # MongoDB Configuration (with auth from secret)
+            - name: MONGODB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: root-username
+            - name: MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-secret
+                  key: root-password
             - name: MONGODB_URL
-              value: "mongodb://mongodb-service:27017/"
+              value: "mongodb://$(MONGODB_USERNAME):$(MONGODB_PASSWORD)@mongodb-service:27017/"
             # Keycloak Configuration
             - name: KEYCLOAK_URL
               value: "https://auth.artotxiki.com/auth"
