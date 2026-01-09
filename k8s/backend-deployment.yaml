@@ -44,14 +44,15 @@ spec:
               value: "false"
             - name: API_PREFIX
               value: "/api/connectivity"
+            # MongoDB Configuration
+            - name: MONGODB_URL
+              value: "mongodb://mongodb-service:27017/"
             # Keycloak Configuration
             - name: KEYCLOAK_URL
               value: "https://auth.artotxiki.com/auth"
             - name: KEYCLOAK_REALM
               value: "nekazari"
             - name: JWT_AUDIENCE
-          - name: MONGODB_URL
-            value: "mongodb://mongodb-service:27017/"
               value: "account"
             # Service-to-service auth (optional)
             - name: MODULE_MANAGEMENT_KEY
@@ -60,33 +61,25 @@ spec:
                   name: module-secrets
                   key: management-key
                   optional: true
-          # Database (if needed - uncomment and configure)
-          # - name: DATABASE_URL
-          #   valueFrom:
-          #     secretKeyRef:
-          #       name: postgresql-secret
-          #       key: connection-string
           resources:
             requests:
               memory: "128Mi"
               cpu: "100m"
             limits:
-              memory: "256Mi"
-              cpu: "200m"
+              memory: "512Mi"
+              cpu: "500m"
           livenessProbe:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 15
-            periodSeconds: 30
-            timeoutSeconds: 5
+            initialDelaySeconds: 30
+            periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 5
-            periodSeconds: 10
-            timeoutSeconds: 3
+            initialDelaySeconds: 10
+            periodSeconds: 5
 
 ---
 # Service: Connectivity Backend API
@@ -97,13 +90,14 @@ metadata:
   namespace: nekazari
   labels:
     app: connectivity-backend
+    component: backend
     module: connectivity
 spec:
-  type: ClusterIP
-  ports:
-    - port: 8000
-      targetPort: 8000
-      protocol: TCP
-      name: http
   selector:
     app: connectivity-backend
+  ports:
+    - name: http
+      port: 8000
+      targetPort: 8000
+      protocol: TCP
+  type: ClusterIP
