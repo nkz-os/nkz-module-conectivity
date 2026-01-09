@@ -1,0 +1,64 @@
+{
+  "id": "connectivity",
+  "name": "connectivity",
+  "display_name": "Connectivity",
+  "version": "1.0.0",
+  "description": "IoT Device Connectivity Manager - Manage Device Profiles and configure data transformation for IoT sensors",
+  "short_description": "Manage IoT device profiles and data mappings",
+  "author": {
+    "name": "Nekazari Team",
+    "email": "nekazari@artotxiki.com",
+    "organization": "Artotxiki Robotics"
+  },
+  "category": "iot",
+  "module_type": "ADDON_CORE",
+  "required_plan_type": "free",
+  "pricing_tier": "FREE",
+  "route_path": "/connectivity",
+  "label": "Connectivity",
+  "icon": "radio",
+  "icon_url": "assets/icon.png",
+  "required_roles": [
+    "Farmer",
+    "TenantAdmin",
+    "PlatformAdmin"
+  ],
+  "dependencies": {
+    "sdk_version": "^1.0.0",
+    "react_version": "^18.3.1",
+    "platform_version": "^2.0.0"
+  },
+  "permissions": {
+    "api_access": [
+      "/api/connectivity/*"
+    ],
+    "storage_access": false,
+    "external_requests": []
+  },
+  "build_config": {
+    "type": "remote",
+    "remote_entry_url": "/modules/connectivity/assets/remoteEntry.js",
+    "scope": "connectivity",
+    "exposed_module": "./App"
+  },
+  "metadata": {
+    "icon": "📡",
+    "color": "#3B82F6",
+    "features": [
+      "Device Profile Management",
+      "No-Code Data Mapping",
+      "SDM Attribute Discovery",
+      "JEXL Transformations",
+      "Ingestion Monitoring"
+    ],
+    "screenshots": [
+      "assets/screenshot1.png"
+    ],
+    "slots": {
+      "layer-toggle": [],
+      "context-panel": [],
+      "bottom-panel": [],
+      "entity-tree": []
+    }
+  }
+}

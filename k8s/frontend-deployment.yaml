@@ -1,0 +1,77 @@
+# =============================================================================
+# Connectivity Frontend Deployment
+# =============================================================================
+# Frontend service for Connectivity module
+# =============================================================================
+
+---
+# Deployment: Connectivity Frontend Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: connectivity-frontend
+  namespace: nekazari
+  labels:
+    app: connectivity-frontend
+    component: frontend
+    module: connectivity
+    nekazari.io/profile: addon
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: connectivity-frontend
+  template:
+    metadata:
+      labels:
+        app: connectivity-frontend
+        component: frontend
+        module: connectivity
+    spec:
+      containers:
+      - name: frontend
+        image: ghcr.io/k8-benetis/connectivity-frontend:v1.0.0
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 80
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+
+---
+# Service: Connectivity Frontend
+apiVersion: v1
+kind: Service
+metadata:
+  name: connectivity-frontend-service
+  namespace: nekazari
+  labels:
+    app: connectivity-frontend
+    module: connectivity
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  selector:
+    app: connectivity-frontend
+
