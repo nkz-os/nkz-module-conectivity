@@ -1,8 +1,6 @@
 -- =============================================================================
 -- Connectivity Module Registration
 -- =============================================================================
--- Register Connectivity module in the marketplace_modules table
--- =============================================================================
 
 INSERT INTO marketplace_modules (
     id,
@@ -28,28 +26,33 @@ INSERT INTO marketplace_modules (
     'connectivity',
     'connectivity',
     'Connectivity',
-    'Connectivity - Description of your module',
+    'IoT Device Connectivity Manager - Manage Device Profiles and configure data transformation for IoT sensors',
     'https://nekazari.artotxiki.com/modules/connectivity/assets/remoteEntry.js',
     'connectivity',
     './App',
     '1.0.0',
     'Nekazari Team',
-    'analytics',
-    '//connectivity',
+    'iot',
+    '/connectivity',
     'Connectivity',
-    'ADDON_PAID',
-    'premium',
-    'PAID',
+    'ADDON_CORE',
+    'free',
+    'FREE',
     false,
     true,
     ARRAY['Farmer', 'TenantAdmin', 'PlatformAdmin'],
-    '{"icon": "🔧", "color": "#3B82F6"}'::jsonb
+    '{"icon": "📡", "color": "#3B82F6", "features": ["Device Profile Management", "No-Code Data Mapping", "SDM Attribute Discovery", "JEXL Transformations", "Ingestion Monitoring"]}'::jsonb
 ) ON CONFLICT (id) DO UPDATE SET
     display_name = EXCLUDED.display_name,
     description = EXCLUDED.description,
     remote_entry_url = EXCLUDED.remote_entry_url,
     scope = EXCLUDED.scope,
     exposed_module = EXCLUDED.exposed_module,
+    category = EXCLUDED.category,
+    route_path = EXCLUDED.route_path,
+    module_type = EXCLUDED.module_type,
+    required_plan_type = EXCLUDED.required_plan_type,
+    pricing_tier = EXCLUDED.pricing_tier,
+    metadata = EXCLUDED.metadata,
     is_active = true,
     updated_at = NOW();
-
