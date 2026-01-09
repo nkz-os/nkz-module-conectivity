@@ -18,16 +18,20 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy installed packages from builder
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
+# Create non-root user first
+RUN useradd -m -u 1000 appuser
+
+# Copy installed packages from builder to appuser home
+COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 
 # Copy application code
-COPY app/ ./app/
+COPY --chown=appuser:appuser app/ ./app/
 
-# Create non-root user
-RUN useradd -m -u 1000 appuser
+# Switch to non-root user
 USER appuser
+
+# Set PATH to include user-installed packages
+ENV PATH=/home/appuser/.local/bin:$PATH
 
 # Expose port
 EXPOSE 8000
