@@ -1,0 +1,46 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="64" cy="64" r="60" fill="#3B82F6" opacity="0.1"/>
+  
+  <!-- Central Hub (IoT Device) -->
+  <circle cx="64" cy="64" r="12" fill="#3B82F6" stroke="#1E40AF" stroke-width="2"/>
+  
+  <!-- Signal Waves (Top) -->
+  <path d="M 64 30 Q 64 40, 54 50" stroke="#3B82F6" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 64 30 Q 64 40, 74 50" stroke="#3B82F6" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <path d="M 64 22 Q 64 35, 48 52" stroke="#60A5FA" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.4"/>
+  <path d="M 64 22 Q 64 35, 80 52" stroke="#60A5FA" stroke-width="2.5" fill="none" stroke-linecap="round" opacity="0.4"/>
+  
+  <!-- Connected Nodes -->
+  <!-- Top Node -->
+  <circle cx="64" cy="20" r="6" fill="#60A5FA" stroke="#1E40AF" stroke-width="1.5"/>
+  <line x1="64" y1="26" x2="64" y2="52" stroke="#3B82F6" stroke-width="2" opacity="0.5"/>
+  
+  <!-- Right Node -->
+  <circle cx="100" cy="64" r="6" fill="#60A5FA" stroke="#1E40AF" stroke-width="1.5"/>
+  <line x1="94" y1="64" x2="76" y2="64" stroke="#3B82F6" stroke-width="2" opacity="0.5"/>
+  
+  <!-- Bottom-Right Node -->
+  <circle cx="88" cy="95" r="6" fill="#60A5FA" stroke="#1E40AF" stroke-width="1.5"/>
+  <line x1="83" y1="90" x2="70" y2="70" stroke="#3B82F6" stroke-width="2" opacity="0.5"/>
+  
+  <!-- Bottom-Left Node -->
+  <circle cx="40" cy="95" r="6" fill="#60A5FA" stroke="#1E40AF" stroke-width="1.5"/>
+  <line x1="45" y1="90" x2="58" y2="70" stroke="#3B82F6" stroke-width="2" opacity="0.5"/>
+  
+  <!-- Left Node -->
+  <circle cx="28" cy="64" r="6" fill="#60A5FA" stroke="#1E40AF" stroke-width="1.5"/>
+  <line x1="34" y1="64" x2="52" y2="64" stroke="#3B82F6" stroke-width="2" opacity="0.5"/>
+  
+  <!-- Data Flow Particles (animated suggestion) -->
+  <circle cx="64" cy="38" r="2" fill="#60A5FA" opacity="0.8"/>
+  <circle cx="82" cy="64" r="2" fill="#60A5FA" opacity="0.8"/>
+  <circle cx="75" cy="80" r="2" fill="#60A5FA" opacity="0.8"/>
+  <circle cx="46" cy="64" r="2" fill="#60A5FA" opacity="0.8"/>
+  
+  <!-- Inner Ring -->
+  <circle cx="64" cy="64" r="20" fill="none" stroke="#3B82F6" stroke-width="1.5" opacity="0.3" stroke-dasharray="4 4"/>
+  
+  <!-- Outer Ring -->
+  <circle cx="64" cy="64" r="54" fill="none" stroke="#3B82F6" stroke-width="1" opacity="0.2" stroke-dasharray="8 8"/>
+</svg>
