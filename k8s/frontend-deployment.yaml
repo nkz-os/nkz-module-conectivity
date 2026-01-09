@@ -30,7 +30,7 @@ spec:
     spec:
       containers:
       - name: frontend
-        image: ghcr.io/k8-benetis/connectivity-frontend:v1.0.1
+        image: ghcr.io/k8-benetis/connectivity-frontend:v1.0.2
         imagePullPolicy: Always
         ports:
         - name: http
