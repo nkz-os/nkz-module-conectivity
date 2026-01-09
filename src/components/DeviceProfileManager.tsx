@@ -24,9 +24,11 @@ interface DeviceProfileManagerProps {
   apiBaseUrl: string;
 }
 
-// Get JWT token from sessionStorage (Keycloak integration)
+// Get JWT token from Keycloak (global window object)
 const getAuthHeaders = (): HeadersInit => {
-  const token = sessionStorage.getItem('kc_token');
+  const keycloak = (window as any).keycloak;
+  const token = keycloak?.token || null;
+  
   return {
     'Content-Type': 'application/json',
     ...(token && { 'Authorization': `Bearer ${token}` })

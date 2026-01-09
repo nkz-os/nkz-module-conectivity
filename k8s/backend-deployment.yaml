@@ -50,6 +50,8 @@ spec:
             - name: KEYCLOAK_REALM
               value: "nekazari"
             - name: JWT_AUDIENCE
+          - name: MONGODB_URL
+            value: "mongodb://mongodb-service:27017/"
               value: "account"
             # Service-to-service auth (optional)
             - name: MODULE_MANAGEMENT_KEY
