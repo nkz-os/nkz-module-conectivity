@@ -1,15 +1,22 @@
 /**
- * Slot Registration for Connectivity
- * Defines all slots that integrate with the Unified Viewer
+ * Slot Registration for Connectivity Module
+ * Defines all slots that integrate with the Unified Viewer.
+ * 
+ * All widgets include explicit moduleId for proper host integration.
  */
 
 import React from 'react';
 // Import slot components
 import { ExampleSlot } from '../components/slots/ExampleSlot';
 
+// Module identifier - used for all slot widgets
+const MODULE_ID = 'connectivity';
+
 // Type definitions for slot widgets (matching SDK types)
 export interface SlotWidgetDefinition {
   id: string;
+  /** Module ID that owns this widget. REQUIRED for remote modules. */
+  moduleId: string;
   component: string;
   priority: number;
   localComponent: React.ComponentType<any>;
@@ -26,7 +33,7 @@ export type ModuleViewerSlots = Record<SlotType, SlotWidgetDefinition[]>;
 
 /**
  * Connectivity Slots Configuration
- * These slots integrate the module into the Unified Viewer
+ * All widgets explicitly declare moduleId for proper provider wrapping.
  * 
  * Available slots:
  * - 'layer-toggle': Layer manager controls
@@ -37,32 +44,19 @@ export type ModuleViewerSlots = Record<SlotType, SlotWidgetDefinition[]>;
 export const moduleSlots: ModuleViewerSlots = {
   'layer-toggle': [
     // Add your layer toggle widgets here
-    // {
-    //   id: 'connectivity-layer-control',
-    //   component: 'MyLayerControl',
-    //   priority: 10,
-    //   localComponent: MyLayerControl,
-    // }
   ],
   'context-panel': [
     // ExampleSlot - demonstrates API integration
     {
       id: 'connectivity-example',
+      moduleId: MODULE_ID,
       component: 'ExampleSlot',
-      priority: 50,  // Lower priority = higher in list
+      priority: 50,
       localComponent: ExampleSlot,
-      // Uncomment to show only for specific entity types:
-      // showWhen: {
-      //   entityType: ['AgriParcel', 'Building']
-      // }
     }
   ],
-  'bottom-panel': [
-    // Add your bottom panel widgets here (charts, timelines, etc.)
-  ],
-  'entity-tree': [
-    // Add your entity tree widgets here
-  ]
+  'bottom-panel': [],
+  'entity-tree': []
 };
 
 /**
