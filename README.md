@@ -1,222 +1,145 @@
-# Nekazari Module Template
+# Nekazari Module: Connectivity
 
-A production-ready template for creating external modules/addons for the Nekazari Platform. Build modules that integrate seamlessly with the unified viewer via Module Federation, complete with backend API, CI/CD, and Kubernetes deployment.
+**IoT Device Connectivity Manager** — Manages Device Profiles and configures data transformation from raw IoT sensor payloads to NGSI-LD/SDM compliant attributes in the Nekazari Platform.
 
-## Quick Start
+## Overview
 
-### Option A: Using Init Script (Recommended)
+Connectivity is an external addon module for Nekazari that enables tenants to:
 
-```bash
-cp -r module-template my-module-name
-cd my-module-name
-chmod +x scripts/init-module.sh
-./scripts/init-module.sh
-```
+- **Create and manage Device Profiles** — Templates that define how raw IoT data maps to NGSI-LD entities
+- **Configure attribute mappings** — Map incoming keys (e.g., `t`, `h`) to target attributes (e.g., `temperature`, `humidity`)
+- **Apply JEXL transformations** — Optional expressions (e.g., `val * 100`) for unit conversion or scaling
+- **Support SDM entity types** — AgriSensor, WeatherStation, Device (FIWARE Smart Data Models)
 
-The script will interactively prompt for:
-- Module name, display name, scope, route
-- GitHub organization
-- Author information
+The module sits between IoT telemetry ingestion (MQTT, HTTP, telemetry-worker) and the FIWARE Context Broker (Orion-LD). Device profiles define the transformation rules used when ingesting raw data into NGSI-LD entities.
 
-### Option B: Manual Setup
+## Architecture
 
-1. **Copy this template**:
-   ```bash
-   cp -r module-template my-module-name
-   cd my-module-name
-   ```
-
-2. **Replace placeholders** (find & replace in your editor):
-   - `connectivity` → Your module name (e.g., `my-module`)
-   - `Connectivity` → Display name (e.g., `My Module`)
-   - `connectivity` → Module Federation scope (e.g., `my_module`)
-   - `/connectivity` → Route path (e.g., `/my-module`)
-   - `k8-benetis` → GitHub organization (e.g., `k8-benetis`)
-
-3. **Install dependencies**:
-   ```bash
-   npm install
-   cd backend && pip install -r requirements.txt
-   ```
-
-4. **Start development**:
-   ```bash
-   npm run dev          # Frontend at http://localhost:5003
-   cd backend && uvicorn app.main:app --reload  # Backend at http://localhost:8000
-   ```
+| Component     | Technology           | Description                              |
+|--------------|----------------------|------------------------------------------|
+| Frontend     | React 18 + TypeScript + Vite | DeviceProfileManager UI, slot integration |
+| Backend      | Python + FastAPI     | REST API for device profile CRUD         |
+| Persistence  | MongoDB              | Collection `device_profiles` in `nekazari` db |
+| Auth         | Keycloak JWT         | Multi-tenant, RLS via `tenant_id`        |
+| Deployment   | Kubernetes           | GHCR images, `nekazari` namespace        |
 
 ## Project Structure
 
 ```
-module-template/
+nekazari-module-connectivity/
 ├── src/                          # Frontend React application
-│   ├── App.tsx                   # Main app (standalone mode)
-│   ├── components/slots/         # Unified Viewer slot components
-│   │   └── ExampleSlot.tsx       # Example with API integration
+│   ├── App.tsx                   # Main app (standalone + fallback)
+│   ├── components/
+│   │   ├── DeviceProfileManager.tsx  # Main UI for profile management
+│   │   └── slots/
+│   │       └── ExampleSlot.tsx       # Example slot widget for Unified Viewer
+│   ├── slots/index.ts            # Slot registration (context-panel, etc.)
 │   ├── services/api.ts           # SDK-based API client
-│   ├── hooks/useUIKit.tsx        # UI Kit access hook
-│   └── slots/index.ts            # Slot registration
+│   └── hooks/useUIKit.tsx        # UI Kit access hook
 ├── backend/                      # Python FastAPI backend
 │   ├── app/
-│   │   ├── main.py              # FastAPI application
-│   │   ├── config.py            # Environment configuration
-│   │   ├── api/__init__.py      # CRUD routes with auth
-│   │   └── middleware/          # Keycloak JWT middleware
-│   ├── tests/                   # Pytest tests
-│   ├── Dockerfile               # Backend container
-│   └── requirements.txt         # Python dependencies
-├── frontend/                     # Frontend Docker config
-│   ├── Dockerfile               # Multi-stage build
-│   └── nginx.conf               # CORS & Module Federation paths
-├── k8s/                          # Kubernetes manifests
-│   ├── frontend-deployment.yaml # Frontend service
-│   ├── backend-deployment.yaml  # Backend API service
-│   └── registration.sql         # Database registration
-├── .github/workflows/            # CI/CD
-│   └── build-push.yml           # Build & push to GHCR
-├── scripts/
-│   └── init-module.sh           # Module initialization script
-├── vite.config.ts               # Module Federation config
-├── manifest.json                # Module metadata
-├── docker-compose.yml           # Local development
-└── env.example                  # Environment template
+│   │   ├── main.py               # FastAPI application
+│   │   ├── config.py             # Environment configuration
+│   │   ├── device_profiles.py    # Device profile CRUD API
+│   │   └── middleware/           # Keycloak JWT auth
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/
+│   ├── Dockerfile                # Multi-stage build
+│   └── nginx.conf                # CORS & /modules/connectivity/ rewrite
+├── k8s/
+│   ├── frontend-deployment.yaml
+│   ├── backend-deployment.yaml
+│   └── registration.sql          # marketplace_modules registration
+├── manifest.json                 # Module metadata for platform
+└── env.example                   # Environment template
 ```
 
-## Key Concepts
+## Quick Start
 
-### Module Federation
-
-The template uses **Module Federation** to integrate with the Nekazari host:
-
-- **App Component**: Standalone application (fallback mode)
-- **Viewer Slots**: Components that integrate into the unified viewer
-- **Shared Dependencies**: React, ReactDOM, UI Kit, SDK
-
-### Slots System
-
-Slots are integration points in the unified viewer:
-
-| Slot | Location | Use Case |
-|------|----------|----------|
-| `layer-toggle` | Layer manager | Toggle layers/data sources |
-| `context-panel` | Right panel | Entity details, properties |
-| `bottom-panel` | Bottom panel | Charts, timelines |
-| `entity-tree` | Left panel | Entity hierarchy |
-
-See `src/slots/index.ts` for registration.
-
-### SDK Integration
-
-The module uses `@nekazari/sdk` for:
-
-- **`useAuth()`**: Authentication context (user, token, roles)
-- **`useViewer()`**: Viewer state (selected entity, layers, date)
-- **`NKZClient`**: HTTP client with auth headers
-- **`useUIKit()`**: Platform UI components (Card, Button)
-
-## Backend Development
-
-The template includes a FastAPI backend with:
-
-### Authentication Middleware
-
-```python
-from app.middleware import get_current_user, require_roles, get_tenant_id
-
-@router.get("/data")
-async def get_data(
-    user: TokenPayload = Depends(get_current_user),
-    tenant_id: str = Depends(get_tenant_id),
-):
-    return {"user": user.email, "tenant": tenant_id}
-
-@router.get("/admin")
-async def admin_only(
-    user: TokenPayload = Depends(require_roles("TenantAdmin", "PlatformAdmin")),
-):
-    return {"admin": user.email}
-```
-
-### Running Locally
+### Local Development
 
 ```bash
+# Install frontend dependencies
+npm install
+
+# Start frontend dev server (port 5003)
+npm run dev
+
+# Backend (separate terminal)
 cd backend
 pip install -r requirements.txt
 uvicorn app.main:app --reload --port 8000
 ```
 
-### Running Tests
+- Frontend: http://localhost:5003  
+- Backend API: http://localhost:8000  
+- API docs: http://localhost:8000/api/connectivity/docs  
 
-```bash
-cd backend
-python -m pytest tests/ -v
-```
+### Environment
 
-## CI/CD with GitHub Actions
+Copy `env.example` to `.env.local` and adjust as needed. For local dev, the frontend proxies `/api` to production (`nkz.artotxiki.com`) unless overridden.
 
-The template includes `.github/workflows/build-push.yml`:
+## API Reference
 
-- **On push to main**: Builds and pushes images with `main` tag
-- **On tag (v**)**: Builds and pushes versioned images
-- **On PR**: Runs tests only
+### Device Profiles
 
-### Triggering a Release
+| Method | Endpoint                  | Description                 |
+|--------|---------------------------|-----------------------------|
+| GET    | `/api/connectivity/profiles/` | List profiles (tenant + public) |
+| POST   | `/api/connectivity/profiles/` | Create profile              |
+| GET    | `/api/connectivity/profiles/{id}` | Get profile                 |
+| PUT    | `/api/connectivity/profiles/{id}` | Update profile (tenant only) |
+| DELETE | `/api/connectivity/profiles/{id}` | Delete profile (tenant only) |
+| GET    | `/api/connectivity/profiles/schemas/sdm-types` | SDM entity types and attributes |
 
-```bash
-git tag v1.0.0
-git push origin v1.0.0
-```
+### Profile Model
 
-Images will be pushed to:
-- `ghcr.io/k8-benetis/REPO/connectivity-frontend:v1.0.0`
-- `ghcr.io/k8-benetis/REPO/connectivity-backend:v1.0.0`
+- `name`, `description`, `manufacturer`, `model`
+- `sdm_entity_type` — Target SDM entity (AgriSensor, WeatherStation, Device)
+- `mappings` — List of `{ incoming_key, target_attribute, type, transformation?, unit? }`
+- `is_public` — Public template (read-only for other tenants)
 
-## Docker Development
+## Slot Integration
 
-### Using Docker Compose
+The module registers a slot widget in the Unified Viewer:
 
-```bash
-# Start all services
-docker-compose up
+- **context-panel** — ExampleSlot (demo with viewer context, API integration)
 
-# Or build and start in background
-docker-compose up -d --build
-```
-
-### Manual Docker Build
-
-```bash
-# Frontend
-docker build -f frontend/Dockerfile -t connectivity-frontend:dev .
-
-# Backend
-docker build -f backend/Dockerfile -t connectivity-backend:dev ./backend
-```
+See `src/slots/index.ts` for registration and `src/components/slots/ExampleSlot.tsx` for the implementation.
 
 ## Deployment
 
-### 1. Build and Push Images
+### Prerequisites
 
-Either via CI/CD (push tag) or manually:
+- Access to Kubernetes cluster (namespace `nekazari`)
+- GHCR credentials as `ghcr-secret` in namespace
+- `kubectl` configured
+- MongoDB secret (`mongodb-secret`) for backend
+- Ingress routes for `/api/connectivity` and `/modules/connectivity`
+
+### Build and Push Images
 
 ```bash
+# Frontend
 docker build -f frontend/Dockerfile -t ghcr.io/k8-benetis/connectivity-frontend:v1.0.0 .
 docker push ghcr.io/k8-benetis/connectivity-frontend:v1.0.0
 
+# Backend
 docker build -f backend/Dockerfile -t ghcr.io/k8-benetis/connectivity-backend:v1.0.0 ./backend
 docker push ghcr.io/k8-benetis/connectivity-backend:v1.0.0
 ```
 
-### 2. Apply Kubernetes Manifests
+### Apply Kubernetes Manifests
 
 ```bash
-kubectl apply -f k8s/frontend-deployment.yaml
 kubectl apply -f k8s/backend-deployment.yaml
+kubectl apply -f k8s/frontend-deployment.yaml
 ```
 
-### 3. Update Core Ingress
+### Ingress Routes
 
-Add to `nekazari-public/k8s/core/networking/ingress.yaml`:
+Add to `nekazari-public` Ingress (`k8s/core/networking/ingress.yaml`):
 
 ```yaml
 # API route
@@ -228,7 +151,7 @@ Add to `nekazari-public/k8s/core/networking/ingress.yaml`:
       port:
         number: 8000
 
-# Frontend route (MUST come before /modules)
+# Frontend (MUST come before generic /modules)
 - path: /modules/connectivity
   pathType: Prefix
   backend:
@@ -238,94 +161,37 @@ Add to `nekazari-public/k8s/core/networking/ingress.yaml`:
         number: 80
 ```
 
-### 4. Register Module
+### Register Module
 
 ```bash
-kubectl exec -it <postgres-pod> -n nekazari -- psql -U nekazari -d nekazari -f /path/to/k8s/registration.sql
+kubectl exec -it -n nekazari <postgres-pod> -- psql -U nekazari -d nekazari -f - < k8s/registration.sql
 ```
 
-### 5. Verify
+### Verify
 
 ```bash
-# Check remoteEntry.js
-curl https://nekazari.artotxiki.com/modules/connectivity/assets/remoteEntry.js
-
-# Check API health
 curl https://nkz.artotxiki.com/api/connectivity/health
+curl -I https://nekazari.artotxiki.com/modules/connectivity/assets/remoteEntry.js
 ```
 
-## Creating Slot Components
+See [EXTERNAL_MODULE_INSTALLATION](../nekazari-public/docs/modules/EXTERNAL_MODULE_INSTALLATION.md) for full platform installation guide.
 
-```typescript
-// src/components/slots/MySlot.tsx
-import React from 'react';
-import { useViewer, useAuth } from '@nekazari/sdk';
-import { useUIKit } from '@/hooks/useUIKit';
+## Module Metadata
 
-export const MySlot: React.FC = () => {
-  const { Card, Button } = useUIKit();
-  const { selectedEntityId } = useViewer();
-  const { user } = useAuth();
+| Field         | Value                             |
+|---------------|-----------------------------------|
+| ID            | `connectivity`                    |
+| Route         | `/connectivity`                   |
+| Category      | `iot`                             |
+| Module Type   | `ADDON_CORE`                      |
+| Required Roles| Farmer, TenantAdmin, PlatformAdmin |
 
-  return (
-    <Card padding="md">
-      <h3>My Slot</h3>
-      <p>Selected: {selectedEntityId}</p>
-      <p>User: {user?.email}</p>
-      <Button variant="primary">Action</Button>
-    </Card>
-  );
-};
-```
+## Security
 
-Register in `src/slots/index.ts`:
-
-```typescript
-import { MySlot } from '../components/slots/MySlot';
-
-export const moduleSlots = {
-  'context-panel': [
-    {
-      id: 'my-slot',
-      component: 'MySlot',
-      priority: 50,
-      localComponent: MySlot,
-    }
-  ],
-  // ...
-};
-```
-
-## Troubleshooting
-
-### Module not loading
-
-- Check `remoteEntry.js` is accessible (should return JS, not HTML)
-- Verify Ingress route order (`/modules/connectivity` before `/modules`)
-- Check browser console for Module Federation errors
-
-### API calls failing
-
-- Verify authentication token is present
-- Check Ingress API route exists
-- Verify backend pod is running: `kubectl logs -l app=connectivity-backend`
-
-### UI Kit not available
-
-- `useUIKit()` returns fallback components until host initializes
-- Check that host frontend version supports UI Kit globals
-
-## Resources
-
-- [External Module Installation Guide](../docs/modules/EXTERNAL_MODULE_INSTALLATION.md)
-- [SDK Documentation](../packages/sdk/README.md)
-- [Nekazari Platform Manual](../PLATFORM_MANUAL.md)
+- **Public repo** — No hardcoded secrets, paths, or emails
+- All credentials via environment variables and Kubernetes secrets
+- JWT validation via Keycloak JWKS; tenant isolation via `tenant_id`
 
 ## License
 
-AGPL-3.0 - Same as Nekazari Platform
-
-## Support
-
-- GitHub Issues: https://github.com/k8-benetis/nekazari-public
-- Email: nekazari@artotxiki.com
+AGPL-3.0 (same as Nekazari Platform)

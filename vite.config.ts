@@ -1,53 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import federation from '@originjs/vite-plugin-federation';
 import path from 'path';
 
 export default defineConfig({
   plugins: [
-    react(),
-    federation({
-      name: 'connectivity',
-      filename: 'remoteEntry.js',
-      exposes: {
-        // Main app component (for standalone/fallback mode)
-        './App': './src/App.tsx',
-        // Viewer slots configuration
-        './viewerSlots': './src/slots/index.ts',
-        // Individual slot components (for direct imports)
-        './ExampleSlot': './src/components/slots/ExampleSlot.tsx',
-      },
-      shared: {
-        'react': {
-          singleton: true,
-          requiredVersion: '^18.3.1',
-          import: false,
-          shareScope: 'default',
-        },
-        'react-dom': {
-          singleton: true,
-          requiredVersion: '^18.3.1',
-          import: false,
-          shareScope: 'default',
-        },
-        'react-router-dom': {
-          singleton: true,
-          requiredVersion: '^6.26.0',
-          import: false,
-          shareScope: 'default',
-        },
-        '@nekazari/ui-kit': {
-          singleton: true,
-          requiredVersion: '^1.0.0',
-          import: false,
-          shareScope: 'default',
-        },
-        '@nekazari/sdk': {
-          singleton: false,
-          requiredVersion: '^1.0.0',
-        },
-      },
-    }),
+    react({ jsxRuntime: 'classic' }),
   ],
   resolve: {
     alias: {
@@ -59,32 +16,43 @@ export default defineConfig({
     port: 5003,
     cors: true,
     proxy: {
-      // Proxy to production API for development
       '/api': {
-        target: 'https://nkz.artotxiki.com',
+        // Set VITE_DEV_API_TARGET in .env.local to proxy to a running API server
+        target: process.env.VITE_DEV_API_TARGET || 'http://localhost:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
     },
   },
   build: {
-    target: 'esnext',
-    minify: false,
-    cssCodeSplit: false,
+    lib: {
+      entry: path.resolve(__dirname, 'src/moduleEntry.ts'),
+      name: 'NkzConnectivityModule',
+      formats: ['iife'],
+      fileName: () => 'nkz-module.js',
+    },
     rollupOptions: {
       external: [
         'react',
         'react-dom',
+        'react-dom/client',
         'react-router-dom',
+        '@nekazari/sdk',
+        '@nekazari/ui-kit',
       ],
       output: {
         globals: {
-          'react': 'React',
-          'react-dom': 'ReactDOM',
-          'react-router-dom': 'ReactRouterDOM',
+          'react':             'React',
+          'react-dom':         'ReactDOM',
+          'react-dom/client':  'ReactDOM',
+          'react-router-dom':  'ReactRouterDOM',
+          '@nekazari/sdk':     '__NKZ_SDK__',
+          '@nekazari/ui-kit':  '__NKZ_UI__',
         },
-        format: 'es',
+        inlineDynamicImports: true,
       },
     },
+    minify: true,
+    cssCodeSplit: false,
   },
 });

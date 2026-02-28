@@ -57,9 +57,12 @@ spec:
                   key: root-password
             - name: MONGODB_URL
               value: "mongodb://$(MONGODB_USERNAME):$(MONGODB_PASSWORD)@mongodb-service:27017/"
-            # Keycloak Configuration
+            # Keycloak Configuration — set KEYCLOAK_URL to your auth server
             - name: KEYCLOAK_URL
-              value: "https://auth.artotxiki.com/auth"
+              valueFrom:
+                configMapKeyRef:
+                  name: platform-config
+                  key: keycloak_url
             - name: KEYCLOAK_REALM
               value: "nekazari"
             - name: JWT_AUDIENCE

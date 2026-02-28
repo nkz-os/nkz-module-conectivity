@@ -24,14 +24,16 @@ interface DeviceProfileManagerProps {
   apiBaseUrl: string;
 }
 
-// Get JWT token from Keycloak (global window object)
+// Get JWT token from the NKZ SDK or auth context
 const getAuthHeaders = (): HeadersInit => {
-  const keycloak = (window as any).keycloak;
-  const token = keycloak?.token || null;
-  
+  const token =
+    (window as any).__NKZ_SDK__?.auth?.getToken?.() ||
+    (window as any).__nekazariAuth?.token ||
+    null;
+
   return {
     'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
+    ...(token && { 'Authorization': `Bearer ${token}` }),
   };
 };
 

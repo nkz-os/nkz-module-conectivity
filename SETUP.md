@@ -1,119 +1,148 @@
-# Module Template Setup Guide
+# Connectivity Module — Setup & Deployment
 
-This guide will help you set up your new module from this template.
+Module-specific setup and deployment instructions. For platform-wide installation, see [EXTERNAL_MODULE_INSTALLATION](../nekazari-public/docs/modules/EXTERNAL_MODULE_INSTALLATION.md).
 
-## Step 1: Copy Template
+## Local Development
+
+### 1. Environment
 
 ```bash
-cp -r module-template my-module-name
-cd my-module-name
+cp env.example .env.local
+# Edit .env.local if needed (MONGODB_URL for backend, VITE_API_BASE_URL for frontend)
 ```
 
-## Step 2: Replace Placeholders
+### 2. Backend
 
-Use find-and-replace in your editor to replace:
+```bash
+cd backend
+pip install -r requirements.txt
+# Set MONGODB_URL or use local MongoDB
+export MONGODB_URL=mongodb://localhost:27017/
+uvicorn app.main:app --reload --port 8000
+```
 
-- `connectivity` → Your module ID (lowercase, hyphens, e.g., `my-module`)
-- `Connectivity` → Display name (e.g., `My Module`)
-- `connectivity` → Module scope for Module Federation (e.g., `my_module`)
-- `/connectivity` → Route path (e.g., `/my-module`)
-- `k8-benetis` → Your GitHub organization (e.g., `k8-benetis`)
-
-### Files to Update
-
-1. **package.json**
-   - `name`: `connectivity-module`
-   - `description`: Update description
-
-2. **vite.config.ts**
-   - `name`: `connectivity` (federation name)
-   - `exposes`: Update component paths if needed
-
-3. **manifest.json**
-   - All `connectivity`, `Connectivity`, `/connectivity`, `connectivity`
-   - Update author, description, features
-
-4. **k8s/frontend-deployment.yaml**
-   - `name`: `connectivity-frontend`
-   - `image`: `ghcr.io/k8-benetis/connectivity-frontend:v1.0.0`
-   - Service name: `connectivity-frontend-service`
-
-5. **k8s/registration.sql**
-   - All placeholders
-
-6. **frontend/nginx.conf**
-   - `location ~ ^/modules/connectivity/`
-
-7. **src/App.tsx**
-   - `Connectivity` in title and content
-
-8. **src/slots/index.ts**
-   - Comments mentioning `Connectivity`
-
-9. **src/services/api.ts**
-   - `baseUrl`: `/api/connectivity`
-   - Comments mentioning `Connectivity`
-
-## Step 3: Install Dependencies
+### 3. Frontend
 
 ```bash
 npm install
-```
-
-## Step 4: Update Slot Components
-
-1. Edit `src/components/slots/ExampleSlot.tsx` or create new slot components
-2. Register them in `src/slots/index.ts`
-3. Export them in `vite.config.ts` under `exposes`
-
-## Step 5: Update API Client
-
-Edit `src/services/api.ts` with your actual API endpoints.
-
-## Step 6: Test Locally
-
-```bash
 npm run dev
 ```
 
-Visit `http://localhost:5003` to see your module.
+Frontend runs at http://localhost:5003. API calls to `/api` are proxied to production (`nkz.artotxiki.com`) by default. To use the local backend, set `VITE_API_BASE_URL=http://localhost:8000/api/connectivity` in `.env.local`.
 
-## Step 7: Build
+### 4. MongoDB (Local)
+
+For local backend, MongoDB must be running. The backend uses `nekazari.device_profiles`.
+
+```bash
+# Using Docker
+docker run -d -p 27017:27017 mongo:7
+```
+
+## Build
+
+### Frontend
 
 ```bash
 npm run build
 ```
 
-## Step 8: Docker Build
+### Docker Images
 
 ```bash
+# Frontend (from module root)
 docker build -f frontend/Dockerfile -t ghcr.io/k8-benetis/connectivity-frontend:v1.0.0 .
-docker push ghcr.io/k8-benetis/connectivity-frontend:v1.0.0
+
+# Backend
+docker build -f backend/Dockerfile -t ghcr.io/k8-benetis/connectivity-backend:v1.0.0 ./backend
 ```
 
-## Step 9: Deploy
+## Deployment (Production)
 
-1. Update `k8s/frontend-deployment.yaml` with your image
-2. Apply deployment:
-   ```bash
-   kubectl apply -f k8s/frontend-deployment.yaml
-   ```
-3. Register module:
-   ```bash
-   kubectl exec -it <postgres-pod> -n nekazari -- psql -U nekazari -d nekazari -f /path/to/k8s/registration.sql
-   ```
-4. Update Ingress in `nekazari-public`:
-   ```yaml
-   - path: /modules/connectivity
-     backend:
-       service:
-         name: connectivity-frontend-service
-   ```
+### 1. Push Images to GHCR
 
-## Next Steps
+```bash
+echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
+docker push ghcr.io/k8-benetis/connectivity-frontend:v1.0.0
+docker push ghcr.io/k8-benetis/connectivity-backend:v1.0.0
+```
 
-- Read the main `README.md` for detailed documentation
-- Check examples in `src/components/slots/ExampleSlot.tsx`
-- Review SDK documentation for available hooks and APIs
-- Follow best practices from Module Development Guide
+### 2. Apply Kubernetes Manifests
 
+```bash
+kubectl apply -f k8s/backend-deployment.yaml
+kubectl apply -f k8s/frontend-deployment.yaml
+```
+
+### 3. Update Ingress (nekazari-public)
+
+Add routes in `k8s/core/networking/ingress.yaml` (before generic `/modules`):
+
+```yaml
+- path: /api/connectivity
+  pathType: Prefix
+  backend:
+    service:
+      name: connectivity-api-service
+      port:
+        number: 8000
+
+- path: /modules/connectivity
+  pathType: Prefix
+  backend:
+    service:
+      name: connectivity-frontend-service
+      port:
+        number: 80
+```
+
+Apply:
+
+```bash
+cd nekazari-public
+kubectl apply -f k8s/core/networking/ingress.yaml
+```
+
+### 4. Register Module
+
+```bash
+kubectl exec -it -n nekazari <postgresql-pod> -- psql -U nekazari -d nekazari -f - < k8s/registration.sql
+```
+
+Or from inside a pod with DB access:
+
+```bash
+psql $DATABASE_URL -f k8s/registration.sql
+```
+
+### 5. Verify
+
+```bash
+# API health
+curl https://nkz.artotxiki.com/api/connectivity/health
+
+# Frontend remoteEntry.js
+curl -I https://nekazari.artotxiki.com/modules/connectivity/assets/remoteEntry.js
+# Should return 200 and Content-Type: application/javascript
+```
+
+## Required Secrets
+
+| Secret         | Keys                    | Purpose                |
+|----------------|-------------------------|------------------------|
+| ghcr-secret    | -                       | Pull images from GHCR  |
+| mongodb-secret | root-username, root-password | MongoDB auth     |
+| module-secrets | management-key (optional) | Service-to-service auth |
+
+## Rollback
+
+```bash
+# Remove registration
+kubectl exec -it -n nekazari <postgresql-pod> -- psql -U nekazari -d nekazari -c \
+  "DELETE FROM marketplace_modules WHERE id = 'connectivity';"
+
+# Remove Ingress routes (edit nekazari-public k8s)
+# Remove deployments
+kubectl delete -f k8s/backend-deployment.yaml
+kubectl delete -f k8s/frontend-deployment.yaml
+```

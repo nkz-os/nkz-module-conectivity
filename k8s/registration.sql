@@ -27,7 +27,7 @@ INSERT INTO marketplace_modules (
     'connectivity',
     'Connectivity',
     'IoT Device Connectivity Manager - Manage Device Profiles and configure data transformation for IoT sensors',
-    'https://nekazari.artotxiki.com/modules/connectivity/assets/remoteEntry.js',
+    '/modules/connectivity/nkz-module.js',
     'connectivity',
     './App',
     '1.0.1',

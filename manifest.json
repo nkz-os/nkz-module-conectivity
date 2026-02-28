@@ -7,8 +7,8 @@
   "short_description": "Manage IoT device profiles and data mappings",
   "author": {
     "name": "Nekazari Team",
-    "email": "nekazari@artotxiki.com",
-    "organization": "Artotxiki Robotics"
+    "email": "no-reply@robotika.cloud",
+    "organization": "Nekazari Platform"
   },
   "category": "iot",
   "module_type": "ADDON_CORE",
@@ -36,10 +36,8 @@
     "external_requests": []
   },
   "build_config": {
-    "type": "remote",
-    "remote_entry_url": "/modules/connectivity/assets/remoteEntry.js",
-    "scope": "connectivity",
-    "exposed_module": "./App"
+    "type": "iife",
+    "entry": "nkz-module.js"
   },
   "metadata": {
     "icon": "📡",
