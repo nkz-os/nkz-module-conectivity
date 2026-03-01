@@ -24,16 +24,10 @@ interface DeviceProfileManagerProps {
   apiBaseUrl: string;
 }
 
-// Get JWT token from the NKZ SDK or auth context
+// Auth is handled via httpOnly cookie (credentials: 'include').
 const getAuthHeaders = (): HeadersInit => {
-  const token =
-    (window as any).__NKZ_SDK__?.auth?.getToken?.() ||
-    (window as any).__nekazariAuth?.token ||
-    null;
-
   return {
     'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
   };
 };
 
@@ -53,7 +47,8 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
     setError(null);
     try {
       const response = await fetch(`${apiBaseUrl}/profiles/`, {
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
+        credentials: 'include',
       });
       
       if (!response.ok) {
@@ -112,7 +107,8 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
     try {
       const response = await fetch(`${apiBaseUrl}/profiles/${id}`, {
         method: 'DELETE',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
+        credentials: 'include',
       });
       
       if (!response.ok) {
