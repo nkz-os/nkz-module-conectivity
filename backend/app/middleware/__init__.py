@@ -8,7 +8,7 @@ Compatible with Nekazari platform authentication.
 import httpx
 from typing import Optional
 from functools import lru_cache
-from fastapi import HTTPException, Depends, Header, status
+from fastapi import HTTPException, Depends, Header, Request, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, jwk, JWTError
 from jose.exceptions import JWKError
@@ -93,25 +93,31 @@ class TokenPayload:
 
 
 async def get_current_user(
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     settings: Settings = Depends(get_settings),
 ) -> TokenPayload:
     """
     Validate JWT token and return user payload.
-    
+    Reads token from Authorization header or httpOnly cookie (fallback).
+
     Usage:
         @router.get("/protected")
         async def protected_route(user: TokenPayload = Depends(get_current_user)):
             return {"user": user.email}
     """
-    if not credentials:
+    token = None
+    if credentials:
+        token = credentials.credentials
+    else:
+        token = request.cookies.get('nkz_token')
+
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing authorization token",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
-    token = credentials.credentials
     
     try:
         # Decode header to get key ID
@@ -157,6 +163,7 @@ async def get_current_user(
 
 
 async def get_optional_user(
+    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     settings: Settings = Depends(get_settings),
 ) -> Optional[TokenPayload]:
@@ -164,11 +171,11 @@ async def get_optional_user(
     Same as get_current_user but returns None for unauthenticated requests.
     Useful for endpoints that work differently for authenticated vs anonymous users.
     """
-    if not credentials:
+    if not credentials and not request.cookies.get('nkz_token'):
         return None
-    
+
     try:
-        return await get_current_user(credentials, settings)
+        return await get_current_user(request, credentials, settings)
     except HTTPException:
         return None
 
