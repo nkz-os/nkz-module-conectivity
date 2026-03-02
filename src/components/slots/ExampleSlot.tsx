@@ -33,7 +33,7 @@ interface ExampleSlotProps {
 
 export const ExampleSlot: React.FC<ExampleSlotProps> = ({ className }) => {
   const { Card, Button } = useUIKit();
-  const { selectedEntityId, selectedEntityType, isLayerActive } = useViewer();
+  const { selectedEntityId, selectedEntityType } = useViewer();
   const { user, isAuthenticated } = useAuth();
   const api = useModuleApi();
 
