@@ -3,13 +3,8 @@ import { DeviceProfileManager } from './components/DeviceProfileManager';
 import './index.css';
 
 const ModuleApp: React.FC = () => {
-  // API base is injected at runtime by the host nginx (window.__ENV__.VITE_API_URL).
-  // Falls back to build-time env, then relative path (same-origin deployment).
-  const apiBase =
-    (window as any).__ENV__?.VITE_API_URL ||
-    (import.meta as any).env?.VITE_API_URL ||
-    '';
-  const apiBaseUrl = (import.meta as any).env?.VITE_API_BASE_URL || `${apiBase}/api/connectivity`;
+  // Same-origin only: cookie auth works only when request stays on nekazari.robotika.cloud.
+  const apiBaseUrl = '/api/connectivity';
 
   return (
     <div className="w-full bg-gray-50 min-h-screen">
