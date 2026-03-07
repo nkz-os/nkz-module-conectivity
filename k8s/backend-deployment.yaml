@@ -28,8 +28,6 @@ spec:
         component: backend
         module: connectivity
     spec:
-      imagePullSecrets:
-        - name: ghcr-secret
       containers:
         - name: backend
           image: ghcr.io/k8-benetis/connectivity-backend:v1.0.1
