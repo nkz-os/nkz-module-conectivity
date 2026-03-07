@@ -59,8 +59,8 @@ spec:
             - name: KEYCLOAK_URL
               valueFrom:
                 configMapKeyRef:
-                  name: platform-config
-                  key: keycloak_url
+                  name: nekazari-config
+                  key: KEYCLOAK_URL
             - name: KEYCLOAK_REALM
               value: "nekazari"
             - name: JWT_AUDIENCE
