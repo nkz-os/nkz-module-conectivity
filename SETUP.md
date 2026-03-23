@@ -51,10 +51,10 @@ npm run build
 
 ```bash
 # Frontend (from module root)
-docker build -f frontend/Dockerfile -t ghcr.io/k8-benetis/connectivity-frontend:v1.0.0 .
+docker build -f frontend/Dockerfile -t ghcr.io/nkz-os/connectivity-frontend:v1.0.0 .
 
 # Backend
-docker build -f backend/Dockerfile -t ghcr.io/k8-benetis/connectivity-backend:v1.0.0 ./backend
+docker build -f backend/Dockerfile -t ghcr.io/nkz-os/connectivity-backend:v1.0.0 ./backend
 ```
 
 ## Deployment (Production)
@@ -63,8 +63,8 @@ docker build -f backend/Dockerfile -t ghcr.io/k8-benetis/connectivity-backend:v1
 
 ```bash
 echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
-docker push ghcr.io/k8-benetis/connectivity-frontend:v1.0.0
-docker push ghcr.io/k8-benetis/connectivity-backend:v1.0.0
+docker push ghcr.io/nkz-os/connectivity-frontend:v1.0.0
+docker push ghcr.io/nkz-os/connectivity-backend:v1.0.0
 ```
 
 ### 2. Apply Kubernetes Manifests

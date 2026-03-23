@@ -122,12 +122,12 @@ See `src/slots/index.ts` for registration and `src/components/slots/ExampleSlot.
 
 ```bash
 # Frontend
-docker build -f frontend/Dockerfile -t ghcr.io/k8-benetis/connectivity-frontend:v1.0.0 .
-docker push ghcr.io/k8-benetis/connectivity-frontend:v1.0.0
+docker build -f frontend/Dockerfile -t ghcr.io/nkz-os/connectivity-frontend:v1.0.0 .
+docker push ghcr.io/nkz-os/connectivity-frontend:v1.0.0
 
 # Backend
-docker build -f backend/Dockerfile -t ghcr.io/k8-benetis/connectivity-backend:v1.0.0 ./backend
-docker push ghcr.io/k8-benetis/connectivity-backend:v1.0.0
+docker build -f backend/Dockerfile -t ghcr.io/nkz-os/connectivity-backend:v1.0.0 ./backend
+docker push ghcr.io/nkz-os/connectivity-backend:v1.0.0
 ```
 
 ### Apply Kubernetes Manifests
