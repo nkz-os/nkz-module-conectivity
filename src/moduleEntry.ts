@@ -1,3 +1,4 @@
+import { defineModule } from "@nekazari/module-kit";
 /**
  * NKZ Module Entry Point — IIFE bundle
  *
@@ -9,6 +10,7 @@
  * IMPORTANT: The module id MUST match the marketplace_modules.id in PostgreSQL.
  */
 
+import './i18n';
 import ModuleApp from './App';
 import { moduleSlots } from './slots';
 

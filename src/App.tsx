@@ -1,8 +1,10 @@
 import React from 'react';
+import { useTranslation } from '@nekazari/sdk';
 import { DeviceProfileManager } from './components/DeviceProfileManager';
 import './index.css';
 
 const ModuleApp: React.FC = () => {
+  const { t } = useTranslation('connectivity');
   // Same-origin only: cookie auth works only when request stays on nekazari.robotika.cloud.
   const apiBaseUrl = '/api/connectivity';
 
@@ -13,7 +15,7 @@ const ModuleApp: React.FC = () => {
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-3">
               <span className="text-3xl">📡</span>
-              <h1 className="text-2xl font-bold text-gray-900">Connectivity Manager</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{t('app.title')}</h1>
             </div>
           </div>
         </div>

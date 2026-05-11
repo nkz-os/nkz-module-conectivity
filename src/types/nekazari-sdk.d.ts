@@ -32,6 +32,17 @@ declare module '@nekazari/sdk' {
 
   export function useAuth(): AuthContextValue;
 
+  /** Shared i18next instance (register module namespaces via addResourceBundle) */
+  export const i18n: {
+    addResourceBundle(
+      lng: string,
+      ns: string,
+      resources: Record<string, unknown>,
+      deep?: boolean,
+      overwrite?: boolean
+    ): unknown;
+  };
+
   export interface TranslationContextValue {
     t: (key: string, params?: Record<string, any>) => string;
     i18n: {

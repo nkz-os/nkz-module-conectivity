@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from '@nekazari/sdk';
 import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 
 interface MappingEntry {
@@ -32,6 +33,7 @@ const getAuthHeaders = (): HeadersInit => {
 };
 
 export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiBaseUrl }) => {
+  const { t } = useTranslation('connectivity');
   const [profiles, setProfiles] = useState<DeviceProfile[]>([]);
   const [editingProfile, setEditingProfile] = useState<DeviceProfile | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -53,16 +55,18 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
       
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('No autorizado. Por favor inicia sesión nuevamente.');
+          throw new Error(t('profiles.errors.unauthorizedFull'));
         }
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        throw new Error(
+          t('profiles.errors.http', { status: response.status, statusText: response.statusText })
+        );
       }
       
       const data = await response.json();
       setProfiles(Array.isArray(data) ? data : []);
     } catch (error: any) {
       console.error('Error loading profiles:', error);
-      setError(error.message || 'Error cargando perfiles');
+      setError(error.message || t('profiles.errors.loadProfiles'));
       setProfiles([]);
     } finally {
       setLoading(false);
@@ -86,9 +90,9 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('No autorizado');
+          throw new Error(t('profiles.errors.unauthorizedShort'));
         }
-        throw new Error(`Error ${response.status}`);
+        throw new Error(t('profiles.errors.httpShort', { status: response.status }));
       }
 
       await loadProfiles();
@@ -96,12 +100,12 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
       setIsCreating(false);
     } catch (error: any) {
       console.error('Error saving profile:', error);
-      setError(error.message || 'Error guardando perfil');
+      setError(error.message || t('profiles.errors.save'));
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('¿Eliminar este perfil?')) return;
+    if (!confirm(t('profiles.confirmDelete'))) return;
     
     setError(null);
     try {
@@ -113,15 +117,15 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
       
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('No autorizado');
+          throw new Error(t('profiles.errors.unauthorizedShort'));
         }
-        throw new Error(`Error ${response.status}`);
+        throw new Error(t('profiles.errors.httpShort', { status: response.status }));
       }
       
       await loadProfiles();
     } catch (error: any) {
       console.error('Error deleting profile:', error);
-      setError(error.message || 'Error eliminando perfil');
+      setError(error.message || t('profiles.errors.delete'));
     }
   };
 
@@ -156,7 +160,7 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
   };
 
   if (loading && profiles.length === 0) {
-    return <div className="p-8 text-center">Cargando perfiles...</div>;
+    return <div className="p-8 text-center">{t('profiles.loading')}</div>;
   }
 
   return (
@@ -168,7 +172,7 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
       )}
       
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Perfiles de Dispositivo</h1>
+        <h1 className="text-3xl font-bold">{t('profiles.title')}</h1>
         <button
           onClick={() => {
             setIsCreating(true);
@@ -182,19 +186,19 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
           className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
         >
           <Plus className="w-5 h-5" />
-          Nuevo Perfil
+          {t('profiles.newButton')}
         </button>
       </div>
 
       {(isCreating || editingProfile) && (
         <div className="mb-6 p-6 border-2 border-green-500 rounded-xl bg-green-50">
           <h2 className="text-xl font-semibold mb-4">
-            {isCreating ? 'Crear Perfil' : 'Editar Perfil'}
+            {isCreating ? t('profiles.createTitle') : t('profiles.editTitle')}
           </h2>
           
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Nombre *</label>
+              <label className="block text-sm font-medium mb-1">{t('profiles.nameLabel')}</label>
               <input
                 type="text"
                 value={editingProfile?.name || ''}
@@ -205,7 +209,7 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Tipo SDM *</label>
+              <label className="block text-sm font-medium mb-1">{t('profiles.sdmTypeLabel')}</label>
               <select
                 value={editingProfile?.sdm_entity_type || 'AgriSensor'}
                 onChange={(e) =>
@@ -222,7 +226,7 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Fabricante</label>
+              <label className="block text-sm font-medium mb-1">{t('profiles.manufacturerLabel')}</label>
               <input
                 type="text"
                 value={editingProfile?.manufacturer || ''}
@@ -236,7 +240,7 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">Modelo</label>
+              <label className="block text-sm font-medium mb-1">{t('profiles.modelLabel')}</label>
               <input
                 type="text"
                 value={editingProfile?.model || ''}
@@ -249,7 +253,7 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">Descripción</label>
+            <label className="block text-sm font-medium mb-1">{t('profiles.descriptionLabel')}</label>
             <textarea
               value={editingProfile?.description || ''}
               onChange={(e) =>
@@ -265,12 +269,12 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
 
           <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold">Mapeos de Atributos</h3>
+              <h3 className="font-semibold">{t('profiles.mappingsTitle')}</h3>
               <button
                 onClick={() => handleAddMapping(editingProfile!)}
                 className="text-sm px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
               >
-                + Añadir Mapeo
+                {t('profiles.addMapping')}
               </button>
             </div>
 
@@ -279,7 +283,7 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
                 <div key={index} className="flex gap-2 items-start p-3 bg-white rounded-lg">
                   <input
                     type="text"
-                    placeholder="Clave entrante (ej: t)"
+                    placeholder={t('profiles.placeholderIncoming')}
                     value={mapping.incoming_key}
                     onChange={(e) =>
                       handleMappingChange(
@@ -294,7 +298,7 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
                   <span className="py-1">→</span>
                   <input
                     type="text"
-                    placeholder="Atributo destino (ej: temperature)"
+                    placeholder={t('profiles.placeholderTarget')}
                     value={mapping.target_attribute}
                     onChange={(e) =>
                       handleMappingChange(
@@ -313,13 +317,13 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
                     }
                     className="px-2 py-1 border rounded text-sm"
                   >
-                    <option value="Number">Number</option>
-                    <option value="Text">Text</option>
-                    <option value="Boolean">Boolean</option>
+                    <option value="Number">{t('profiles.typeNumber')}</option>
+                    <option value="Text">{t('profiles.typeText')}</option>
+                    <option value="Boolean">{t('profiles.typeBoolean')}</option>
                   </select>
                   <input
                     type="text"
-                    placeholder="Transformación (ej: val * 100)"
+                    placeholder={t('profiles.placeholderTransform')}
                     value={mapping.transformation || ''}
                     onChange={(e) =>
                       handleMappingChange(
@@ -351,14 +355,14 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
               className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50"
             >
               <X className="w-4 h-4" />
-              Cancelar
+              {t('profiles.cancel')}
             </button>
             <button
               onClick={() => handleSave(editingProfile!)}
               className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               <Save className="w-4 h-4" />
-              Guardar
+              {t('profiles.save')}
             </button>
           </div>
         </div>
@@ -367,7 +371,7 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
       <div className="grid gap-4">
         {profiles.length === 0 ? (
           <div className="p-8 text-center text-gray-500">
-            No hay perfiles creados. Crea uno nuevo para empezar.
+            {t('profiles.empty')}
           </div>
         ) : (
           profiles.map((profile) => (
@@ -398,7 +402,7 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
                 </div>
               </div>
               <div className="text-sm text-gray-500">
-                {profile.mappings.length} mapeos configurados
+                {t('profiles.mappingsCount', { count: profile.mappings.length })}
               </div>
             </div>
           ))

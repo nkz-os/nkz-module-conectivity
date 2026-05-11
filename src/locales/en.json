@@ -1,0 +1,56 @@
+{
+  "app": {
+    "title": "Connectivity Manager"
+  },
+  "profiles": {
+    "loading": "Loading profiles...",
+    "title": "Device profiles",
+    "newButton": "New profile",
+    "createTitle": "Create profile",
+    "editTitle": "Edit profile",
+    "nameLabel": "Name *",
+    "sdmTypeLabel": "SDM type *",
+    "manufacturerLabel": "Manufacturer",
+    "modelLabel": "Model",
+    "descriptionLabel": "Description",
+    "mappingsTitle": "Attribute mappings",
+    "addMapping": "+ Add mapping",
+    "placeholderIncoming": "Incoming key (e.g. t)",
+    "placeholderTarget": "Target attribute (e.g. temperature)",
+    "typeNumber": "Number",
+    "typeText": "Text",
+    "typeBoolean": "Boolean",
+    "placeholderTransform": "Transformation (e.g. val * 100)",
+    "cancel": "Cancel",
+    "save": "Save",
+    "empty": "No profiles yet. Create one to get started.",
+    "mappingsCount": "{{count}} mappings configured",
+    "confirmDelete": "Delete this profile?",
+    "errors": {
+      "unauthorizedFull": "Unauthorized. Please sign in again.",
+      "unauthorizedShort": "Unauthorized",
+      "loadProfiles": "Error loading profiles",
+      "http": "Error {{status}}: {{statusText}}",
+      "httpShort": "Error {{status}}",
+      "save": "Error saving profile",
+      "delete": "Error deleting profile"
+    }
+  },
+  "exampleSlot": {
+    "loginRequired": "Please log in to use this module.",
+    "title": "Connectivity",
+    "selectedEntity": "Selected entity",
+    "entityType": "Entity type",
+    "user": "User",
+    "none": "None",
+    "unknownUser": "Unknown",
+    "emptyList": "No items yet. Click + to create one.",
+    "value": "Value: {{value}}",
+    "demoDescription": "Created from ExampleSlot",
+    "errors": {
+      "load": "Failed to load data",
+      "create": "Failed to create item",
+      "delete": "Failed to delete item"
+    }
+  }
+}

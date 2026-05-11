@@ -15,7 +15,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useViewer, useAuth } from '@nekazari/sdk';
+import { useViewer, useAuth, useTranslation } from '@nekazari/sdk';
 import { useUIKit } from '@/hooks/useUIKit';
 import { useModuleApi } from '@/services/api';
 import { RefreshCw, Plus, Trash2, AlertCircle } from 'lucide-react';
@@ -32,6 +32,7 @@ interface ExampleSlotProps {
 }
 
 export const ExampleSlot: React.FC<ExampleSlotProps> = ({ className }) => {
+  const { t } = useTranslation('connectivity');
   const { Card, Button } = useUIKit();
   const { selectedEntityId, selectedEntityType } = useViewer();
   const { user, isAuthenticated } = useAuth();
@@ -56,7 +57,7 @@ export const ExampleSlot: React.FC<ExampleSlotProps> = ({ className }) => {
       setItems(response.items || []);
     } catch (err: any) {
       console.error('[ExampleSlot] Error fetching data:', err);
-      setError(err.message || 'Failed to load data');
+      setError(err.message || t('exampleSlot.errors.load'));
     } finally {
       setLoading(false);
     }
@@ -72,13 +73,13 @@ export const ExampleSlot: React.FC<ExampleSlotProps> = ({ className }) => {
     try {
       const newItem = await api.createData({
         name: `Item ${Date.now()}`,
-        description: 'Created from ExampleSlot',
+        description: t('exampleSlot.demoDescription'),
         value: Math.random() * 100,
       });
       setItems(prev => [...prev, newItem]);
     } catch (err: any) {
       console.error('[ExampleSlot] Error creating item:', err);
-      setError(err.message || 'Failed to create item');
+      setError(err.message || t('exampleSlot.errors.create'));
     } finally {
       setLoading(false);
     }
@@ -96,7 +97,7 @@ export const ExampleSlot: React.FC<ExampleSlotProps> = ({ className }) => {
       setItems(prev => prev.filter(item => item.id !== id));
     } catch (err: any) {
       console.error('[ExampleSlot] Error deleting item:', err);
-      setError(err.message || 'Failed to delete item');
+      setError(err.message || t('exampleSlot.errors.delete'));
     } finally {
       setLoading(false);
     }
@@ -113,7 +114,7 @@ export const ExampleSlot: React.FC<ExampleSlotProps> = ({ className }) => {
       <Card padding="md" className={className}>
         <div className="flex items-center gap-2 text-amber-600">
           <AlertCircle className="w-5 h-5" />
-          <span className="text-sm">Please log in to use this module.</span>
+          <span className="text-sm">{t('exampleSlot.loginRequired')}</span>
         </div>
       </Card>
     );
@@ -125,7 +126,7 @@ export const ExampleSlot: React.FC<ExampleSlotProps> = ({ className }) => {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-slate-800">
-            Connectivity
+            {t('exampleSlot.title')}
           </h3>
           <div className="flex items-center gap-1">
             <Button
@@ -152,21 +153,21 @@ export const ExampleSlot: React.FC<ExampleSlotProps> = ({ className }) => {
         {/* Viewer Context Info */}
         <div className="text-xs bg-slate-50 rounded p-2 space-y-1">
           <div className="flex justify-between">
-            <span className="text-slate-500">Selected Entity:</span>
+            <span className="text-slate-500">{t('exampleSlot.selectedEntity')}:</span>
             <span className="text-slate-700 font-mono">
-              {selectedEntityId || 'None'}
+              {selectedEntityId || t('exampleSlot.none')}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500">Entity Type:</span>
+            <span className="text-slate-500">{t('exampleSlot.entityType')}:</span>
             <span className="text-slate-700">
-              {selectedEntityType || 'None'}
+              {selectedEntityType || t('exampleSlot.none')}
             </span>
           </div>
           <div className="flex justify-between">
-            <span className="text-slate-500">User:</span>
+            <span className="text-slate-500">{t('exampleSlot.user')}:</span>
             <span className="text-slate-700 truncate max-w-[150px]">
-              {user?.email || 'Unknown'}
+              {user?.email || t('exampleSlot.unknownUser')}
             </span>
           </div>
         </div>
@@ -183,7 +184,7 @@ export const ExampleSlot: React.FC<ExampleSlotProps> = ({ className }) => {
         <div className="space-y-2">
           {items.length === 0 && !loading && (
             <div className="text-sm text-slate-500 text-center py-4">
-              No items yet. Click + to create one.
+              {t('exampleSlot.emptyList')}
             </div>
           )}
 
@@ -197,7 +198,7 @@ export const ExampleSlot: React.FC<ExampleSlotProps> = ({ className }) => {
                   {item.name}
                 </div>
                 <div className="text-xs text-slate-500">
-                  Value: {item.value.toFixed(2)}
+                  {t('exampleSlot.value', { value: item.value.toFixed(2) })}
                 </div>
               </div>
               <Button

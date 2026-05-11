@@ -1,0 +1,56 @@
+{
+  "app": {
+    "title": "Gestor de conectividad"
+  },
+  "profiles": {
+    "loading": "Cargando perfiles...",
+    "title": "Perfiles de dispositivo",
+    "newButton": "Nuevo perfil",
+    "createTitle": "Crear perfil",
+    "editTitle": "Editar perfil",
+    "nameLabel": "Nombre *",
+    "sdmTypeLabel": "Tipo SDM *",
+    "manufacturerLabel": "Fabricante",
+    "modelLabel": "Modelo",
+    "descriptionLabel": "Descripción",
+    "mappingsTitle": "Mapeos de atributos",
+    "addMapping": "+ Añadir mapeo",
+    "placeholderIncoming": "Clave entrante (ej: t)",
+    "placeholderTarget": "Atributo destino (ej: temperature)",
+    "typeNumber": "Number",
+    "typeText": "Text",
+    "typeBoolean": "Boolean",
+    "placeholderTransform": "Transformación (ej: val * 100)",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "empty": "No hay perfiles creados. Crea uno nuevo para empezar.",
+    "mappingsCount": "{{count}} mapeos configurados",
+    "confirmDelete": "¿Eliminar este perfil?",
+    "errors": {
+      "unauthorizedFull": "No autorizado. Por favor inicia sesión nuevamente.",
+      "unauthorizedShort": "No autorizado",
+      "loadProfiles": "Error cargando perfiles",
+      "http": "Error {{status}}: {{statusText}}",
+      "httpShort": "Error {{status}}",
+      "save": "Error guardando perfil",
+      "delete": "Error eliminando perfil"
+    }
+  },
+  "exampleSlot": {
+    "loginRequired": "Inicia sesión para usar este módulo.",
+    "title": "Conectividad",
+    "selectedEntity": "Entidad seleccionada",
+    "entityType": "Tipo de entidad",
+    "user": "Usuario",
+    "none": "Ninguna",
+    "unknownUser": "Desconocido",
+    "emptyList": "Aún no hay elementos. Pulsa + para crear uno.",
+    "value": "Valor: {{value}}",
+    "demoDescription": "Creado desde ExampleSlot",
+    "errors": {
+      "load": "No se han podido cargar los datos",
+      "create": "No se ha podido crear el elemento",
+      "delete": "No se ha podido eliminar el elemento"
+    }
+  }
+}
