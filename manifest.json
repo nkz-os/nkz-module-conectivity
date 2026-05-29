@@ -4,6 +4,14 @@
   "display_name": "Connectivity",
   "version": "1.0.0",
   "description": "IoT Device Connectivity Manager - Manage Device Profiles and configure data transformation for IoT sensors",
+  "description_i18n": {
+    "es": "Gestor de Conectividad de Dispositivos IoT — Administra Perfiles de Dispositivo y configura la transformación de datos para sensores IoT",
+    "en": "IoT Device Connectivity Manager - Manage Device Profiles and configure data transformation for IoT sensors",
+    "eu": "IoT Gailuen Konektibitate Kudeatzailea — Gailuen Profilak kudeatu eta datu-transformazioa konfiguratu IoT sentsoreentzat",
+    "fr": "Gestionnaire de Connectivité des Dispositifs IoT — Gérez les Profils de Dispositif et configurez la transformation des données pour les capteurs IoT",
+    "pt": "Gestor de Conectividade de Dispositivos IoT — Gerencie Perfis de Dispositivo e configure a transformação de dados para sensores IoT",
+    "ca": "Gestor de Connectivitat de Dispositius IoT — Administra Perfils de Dispositiu i configura la transformació de dades per a sensors IoT"
+  },
   "short_description": "Manage IoT device profiles and data mappings",
   "author": {
     "name": "Nekazari Team",
