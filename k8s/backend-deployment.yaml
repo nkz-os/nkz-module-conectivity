@@ -42,36 +42,14 @@ spec:
               value: "false"
             - name: API_PREFIX
               value: "/api/connectivity"
-            # MongoDB Configuration (with auth from secret)
-            - name: MONGODB_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: mongodb-secret
-                  key: root-username
-            - name: MONGODB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: mongodb-secret
-                  key: root-password
-            - name: MONGODB_URL
-              value: "mongodb://$(MONGODB_USERNAME):$(MONGODB_PASSWORD)@mongodb-service:27017/"
-            # Keycloak Configuration — set KEYCLOAK_URL to your auth server
-            - name: KEYCLOAK_URL
-              valueFrom:
-                configMapKeyRef:
-                  name: nekazari-config
-                  key: KEYCLOAK_URL
-            - name: KEYCLOAK_REALM
-              value: "nekazari"
-            - name: JWT_AUDIENCE
-              value: "account"
-            # Service-to-service auth (optional)
-            - name: MODULE_MANAGEMENT_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: module-secrets
-                  key: management-key
-                  optional: true
+            # Orion-LD Context Broker
+            - name: ORION_LD_URL
+              value: "http://orion-ld-service:1026"
+            - name: CONTEXT_URL
+              value: "http://api-gateway-service:5000/ngsi-ld-context.json"
+            # CORS
+            - name: ALLOWED_ORIGINS
+              value: "https://nekazari.robotika.cloud,https://nkz.robotika.cloud"
           resources:
             requests:
               memory: "128Mi"

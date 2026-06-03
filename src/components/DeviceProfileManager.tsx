@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { useTranslation } from '@nekazari/sdk';
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation, useAuth } from '@nekazari/sdk';
+import { useUIKit } from '@/hooks/useUIKit';
+import { useModuleApi } from '@/services/api';
+import { Plus, Edit, Trash2, Save, X, AlertCircle, Loader2 } from 'lucide-react';
 
 interface MappingEntry {
   incoming_key: string;
@@ -21,123 +23,67 @@ interface DeviceProfile {
   is_public: boolean;
 }
 
-interface DeviceProfileManagerProps {
-  apiBaseUrl: string;
-}
-
-// Auth is handled via httpOnly cookie (credentials: 'include').
-const getAuthHeaders = (): HeadersInit => {
-  return {
-    'Content-Type': 'application/json',
-  };
-};
-
-export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiBaseUrl }) => {
+export const DeviceProfileManager: React.FC = () => {
   const { t } = useTranslation('connectivity');
+  const { isAuthenticated } = useAuth();
+  const { Card, Button } = useUIKit();
+  const api = useModuleApi();
+
   const [profiles, setProfiles] = useState<DeviceProfile[]>([]);
   const [editingProfile, setEditingProfile] = useState<DeviceProfile | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadProfiles();
-  }, []);
-
-  const loadProfiles = async () => {
+  const loadProfiles = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${apiBaseUrl}/profiles/`, {
-        headers: getAuthHeaders(),
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error(t('profiles.errors.unauthorizedFull'));
-        }
-        throw new Error(
-          t('profiles.errors.http', { status: response.status, statusText: response.statusText })
-        );
-      }
-      
-      const data = await response.json();
-      setProfiles(Array.isArray(data) ? data : []);
-    } catch (error: any) {
-      console.error('Error loading profiles:', error);
-      setError(error.message || t('profiles.errors.loadProfiles'));
+      const data = await api.listProfiles();
+      setProfiles(data?.items || []);
+    } catch (err: any) {
+      setError(err.message || t('profiles.errors.loadProfiles'));
       setProfiles([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [api, t]);
+
+  useEffect(() => {
+    if (isAuthenticated) loadProfiles();
+  }, [isAuthenticated, loadProfiles]);
 
   const handleSave = async (profile: DeviceProfile) => {
     setError(null);
     try {
-      const url = profile.id
-        ? `${apiBaseUrl}/profiles/${profile.id}`
-        : `${apiBaseUrl}/profiles/`;
-      
-      const method = profile.id ? 'PUT' : 'POST';
-      
-      const response = await fetch(url, {
-        method,
-        headers: getAuthHeaders(),
-        body: JSON.stringify(profile),
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error(t('profiles.errors.unauthorizedShort'));
-        }
-        throw new Error(t('profiles.errors.httpShort', { status: response.status }));
+      if (profile.id) {
+        await api.updateProfile(profile.id, profile as any);
+      } else {
+        await api.createProfile(profile as any);
       }
-
       await loadProfiles();
       setEditingProfile(null);
       setIsCreating(false);
-    } catch (error: any) {
-      console.error('Error saving profile:', error);
-      setError(error.message || t('profiles.errors.save'));
+    } catch (err: any) {
+      setError(err.message || t('profiles.errors.save'));
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm(t('profiles.confirmDelete'))) return;
-    
     setError(null);
     try {
-      const response = await fetch(`${apiBaseUrl}/profiles/${id}`, {
-        method: 'DELETE',
-        headers: getAuthHeaders(),
-        credentials: 'include',
-      });
-      
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error(t('profiles.errors.unauthorizedShort'));
-        }
-        throw new Error(t('profiles.errors.httpShort', { status: response.status }));
-      }
-      
+      await api.deleteProfile(id);
       await loadProfiles();
-    } catch (error: any) {
-      console.error('Error deleting profile:', error);
-      setError(error.message || t('profiles.errors.delete'));
+    } catch (err: any) {
+      setError(err.message || t('profiles.errors.delete'));
     }
   };
 
   const handleAddMapping = (profile: DeviceProfile) => {
-    const newMapping: MappingEntry = {
-      incoming_key: '',
-      target_attribute: '',
-      type: 'Number',
-    };
     setEditingProfile({
       ...profile,
-      mappings: [...profile.mappings, newMapping],
+      mappings: [...profile.mappings, { incoming_key: '', target_attribute: '', type: 'Number' }],
     });
   };
 
@@ -148,197 +94,117 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
     });
   };
 
-  const handleMappingChange = (
-    profile: DeviceProfile,
-    index: number,
-    field: keyof MappingEntry,
-    value: string
-  ) => {
-    const updatedMappings = [...profile.mappings];
-    updatedMappings[index] = { ...updatedMappings[index], [field]: value };
-    setEditingProfile({ ...profile, mappings: updatedMappings });
+  const handleMappingChange = (profile: DeviceProfile, index: number, field: keyof MappingEntry, value: string) => {
+    const updated = [...profile.mappings];
+    updated[index] = { ...updated[index], [field]: value };
+    setEditingProfile({ ...profile, mappings: updated });
   };
 
   if (loading && profiles.length === 0) {
-    return <div className="p-8 text-center">{t('profiles.loading')}</div>;
+    return (
+      <div className="flex items-center justify-center p-8 text-nkz-muted">
+        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+        {t('profiles.loading')}
+      </div>
+    );
   }
+
+  const inputClass = 'w-full px-3 py-2 border border-nkz-border rounded-md bg-nkz-surface text-nkz-foreground focus:outline-none focus:ring-2 focus:ring-nkz-primary focus:border-transparent';
+  const labelClass = 'block text-sm font-medium text-nkz-muted mb-1';
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-          {error}
+        <div className="mb-4 p-4 bg-nkz-danger-soft border border-nkz-danger-border rounded-lg text-nkz-danger">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 flex-shrink-0" />
+            <span className="text-sm">{error}</span>
+          </div>
         </div>
       )}
-      
+
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">{t('profiles.title')}</h1>
-        <button
+        <h1 className="text-2xl font-semibold text-nkz-foreground">{t('profiles.title')}</h1>
+        <Button
+          variant="primary"
+          size="sm"
           onClick={() => {
             setIsCreating(true);
-            setEditingProfile({
-              name: '',
-              sdm_entity_type: 'AgriSensor',
-              mappings: [],
-              is_public: false,
-            });
+            setEditingProfile({ name: '', sdm_entity_type: 'AgriSensor', mappings: [], is_public: false });
           }}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
         >
-          <Plus className="w-5 h-5" />
-          {t('profiles.newButton')}
-        </button>
+          <Plus className="w-4 h-4 mr-1" />{t('profiles.newButton')}
+        </Button>
       </div>
 
       {(isCreating || editingProfile) && (
-        <div className="mb-6 p-6 border-2 border-green-500 rounded-xl bg-green-50">
-          <h2 className="text-xl font-semibold mb-4">
+        <Card padding="lg" className="mb-6 border-2 border-nkz-primary">
+          <h2 className="text-lg font-semibold text-nkz-foreground mb-4">
             {isCreating ? t('profiles.createTitle') : t('profiles.editTitle')}
           </h2>
-          
+
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label className="block text-sm font-medium mb-1">{t('profiles.nameLabel')}</label>
-              <input
-                type="text"
-                value={editingProfile?.name || ''}
-                onChange={(e) =>
-                  setEditingProfile({ ...editingProfile!, name: e.target.value })
-                }
-                className="w-full px-3 py-2 border rounded-lg"
-              />
+              <label className={labelClass}>{t('profiles.nameLabel')}</label>
+              <input type="text" value={editingProfile?.name || ''} className={inputClass}
+                onChange={(e) => setEditingProfile({ ...editingProfile!, name: e.target.value })} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">{t('profiles.sdmTypeLabel')}</label>
-              <select
-                value={editingProfile?.sdm_entity_type || 'AgriSensor'}
-                onChange={(e) =>
-                  setEditingProfile({
-                    ...editingProfile!,
-                    sdm_entity_type: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border rounded-lg"
-              >
+              <label className={labelClass}>{t('profiles.sdmTypeLabel')}</label>
+              <select value={editingProfile?.sdm_entity_type || 'AgriSensor'} className={inputClass}
+                onChange={(e) => setEditingProfile({ ...editingProfile!, sdm_entity_type: e.target.value })}>
                 <option value="AgriSensor">AgriSensor</option>
                 <option value="WeatherStation">WeatherStation</option>
                 <option value="Device">Device</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">{t('profiles.manufacturerLabel')}</label>
-              <input
-                type="text"
-                value={editingProfile?.manufacturer || ''}
-                onChange={(e) =>
-                  setEditingProfile({
-                    ...editingProfile!,
-                    manufacturer: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 border rounded-lg"
-              />
+              <label className={labelClass}>{t('profiles.manufacturerLabel')}</label>
+              <input type="text" value={editingProfile?.manufacturer || ''} className={inputClass}
+                onChange={(e) => setEditingProfile({ ...editingProfile!, manufacturer: e.target.value })} />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">{t('profiles.modelLabel')}</label>
-              <input
-                type="text"
-                value={editingProfile?.model || ''}
-                onChange={(e) =>
-                  setEditingProfile({ ...editingProfile!, model: e.target.value })
-                }
-                className="w-full px-3 py-2 border rounded-lg"
-              />
+              <label className={labelClass}>{t('profiles.modelLabel')}</label>
+              <input type="text" value={editingProfile?.model || ''} className={inputClass}
+                onChange={(e) => setEditingProfile({ ...editingProfile!, model: e.target.value })} />
             </div>
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-1">{t('profiles.descriptionLabel')}</label>
-            <textarea
-              value={editingProfile?.description || ''}
-              onChange={(e) =>
-                setEditingProfile({
-                  ...editingProfile!,
-                  description: e.target.value,
-                })
-              }
-              className="w-full px-3 py-2 border rounded-lg"
-              rows={2}
-            />
+            <label className={labelClass}>{t('profiles.descriptionLabel')}</label>
+            <textarea value={editingProfile?.description || ''} className={inputClass} rows={2}
+              onChange={(e) => setEditingProfile({ ...editingProfile!, description: e.target.value })} />
           </div>
 
           <div className="mb-4">
             <div className="flex justify-between items-center mb-2">
-              <h3 className="font-semibold">{t('profiles.mappingsTitle')}</h3>
-              <button
-                onClick={() => handleAddMapping(editingProfile!)}
-                className="text-sm px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                {t('profiles.addMapping')}
-              </button>
+              <h3 className="font-semibold text-nkz-foreground">{t('profiles.mappingsTitle')}</h3>
+              <Button variant="secondary" size="sm" onClick={() => handleAddMapping(editingProfile!)}>
+                <Plus className="w-3 h-3 mr-1" />{t('profiles.addMapping')}
+              </Button>
             </div>
-
             <div className="space-y-2">
               {editingProfile?.mappings.map((mapping, index) => (
-                <div key={index} className="flex gap-2 items-start p-3 bg-white rounded-lg">
-                  <input
-                    type="text"
-                    placeholder={t('profiles.placeholderIncoming')}
-                    value={mapping.incoming_key}
-                    onChange={(e) =>
-                      handleMappingChange(
-                        editingProfile,
-                        index,
-                        'incoming_key',
-                        e.target.value
-                      )
-                    }
-                    className="flex-1 px-2 py-1 border rounded text-sm"
-                  />
-                  <span className="py-1">→</span>
-                  <input
-                    type="text"
-                    placeholder={t('profiles.placeholderTarget')}
-                    value={mapping.target_attribute}
-                    onChange={(e) =>
-                      handleMappingChange(
-                        editingProfile,
-                        index,
-                        'target_attribute',
-                        e.target.value
-                      )
-                    }
-                    className="flex-1 px-2 py-1 border rounded text-sm"
-                  />
-                  <select
-                    value={mapping.type}
-                    onChange={(e) =>
-                      handleMappingChange(editingProfile, index, 'type', e.target.value)
-                    }
-                    className="px-2 py-1 border rounded text-sm"
-                  >
+                <div key={index} className="flex gap-2 items-start p-3 bg-nkz-surface-raised rounded-md border border-nkz-border">
+                  <input type="text" placeholder={t('profiles.placeholderIncoming')} value={mapping.incoming_key}
+                    className="flex-1 px-2 py-1 border border-nkz-border rounded text-sm bg-nkz-surface text-nkz-foreground"
+                    onChange={(e) => handleMappingChange(editingProfile, index, 'incoming_key', e.target.value)} />
+                  <span className="py-1 text-nkz-muted">→</span>
+                  <input type="text" placeholder={t('profiles.placeholderTarget')} value={mapping.target_attribute}
+                    className="flex-1 px-2 py-1 border border-nkz-border rounded text-sm bg-nkz-surface text-nkz-foreground"
+                    onChange={(e) => handleMappingChange(editingProfile, index, 'target_attribute', e.target.value)} />
+                  <select value={mapping.type}
+                    className="px-2 py-1 border border-nkz-border rounded text-sm bg-nkz-surface text-nkz-foreground"
+                    onChange={(e) => handleMappingChange(editingProfile, index, 'type', e.target.value)}>
                     <option value="Number">{t('profiles.typeNumber')}</option>
                     <option value="Text">{t('profiles.typeText')}</option>
                     <option value="Boolean">{t('profiles.typeBoolean')}</option>
                   </select>
-                  <input
-                    type="text"
-                    placeholder={t('profiles.placeholderTransform')}
-                    value={mapping.transformation || ''}
-                    onChange={(e) =>
-                      handleMappingChange(
-                        editingProfile,
-                        index,
-                        'transformation',
-                        e.target.value
-                      )
-                    }
-                    className="flex-1 px-2 py-1 border rounded text-sm"
-                  />
-                  <button
-                    onClick={() => handleRemoveMapping(editingProfile, index)}
-                    className="p-1 text-red-500 hover:bg-red-50 rounded"
-                  >
+                  <input type="text" placeholder={t('profiles.placeholderTransform')} value={mapping.transformation || ''}
+                    className="flex-1 px-2 py-1 border border-nkz-border rounded text-sm bg-nkz-surface text-nkz-foreground"
+                    onChange={(e) => handleMappingChange(editingProfile, index, 'transformation', e.target.value)} />
+                  <button onClick={() => handleRemoveMapping(editingProfile, index)}
+                    className="p-1 text-nkz-danger hover:bg-nkz-danger-soft rounded" type="button">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
@@ -347,67 +213,51 @@ export const DeviceProfileManager: React.FC<DeviceProfileManagerProps> = ({ apiB
           </div>
 
           <div className="flex gap-2 justify-end">
-            <button
-              onClick={() => {
-                setEditingProfile(null);
-                setIsCreating(false);
-              }}
-              className="flex items-center gap-2 px-4 py-2 border rounded-lg hover:bg-gray-50"
-            >
-              <X className="w-4 h-4" />
-              {t('profiles.cancel')}
-            </button>
-            <button
-              onClick={() => handleSave(editingProfile!)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              <Save className="w-4 h-4" />
-              {t('profiles.save')}
-            </button>
+            <Button variant="ghost" size="sm" onClick={() => { setEditingProfile(null); setIsCreating(false); }}>
+              <X className="w-4 h-4 mr-1" />{t('profiles.cancel')}
+            </Button>
+            <Button variant="primary" size="sm" onClick={() => handleSave(editingProfile!)}>
+              <Save className="w-4 h-4 mr-1" />{t('profiles.save')}
+            </Button>
           </div>
-        </div>
+        </Card>
       )}
 
-      <div className="grid gap-4">
+      <div className="space-y-3">
         {profiles.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            {t('profiles.empty')}
-          </div>
+          <Card padding="lg" className="text-center text-nkz-muted">{t('profiles.empty')}</Card>
         ) : (
           profiles.map((profile) => (
-            <div key={profile.id} className="p-4 border rounded-lg hover:shadow-md transition">
-              <div className="flex justify-between items-start mb-2">
-                <div>
-                  <h3 className="text-lg font-semibold">{profile.name}</h3>
-                  <p className="text-sm text-gray-600">
-                    {profile.manufacturer} {profile.model} → {profile.sdm_entity_type}
+            <Card key={profile.id} padding="md" className="hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start">
+                <div className="min-w-0">
+                  <h3 className="text-base font-semibold text-nkz-foreground">{profile.name}</h3>
+                  <p className="text-sm text-nkz-muted mt-0.5">
+                    {[profile.manufacturer, profile.model].filter(Boolean).join(' ')}
+                    {(profile.manufacturer || profile.model) ? ' → ' : ''}{profile.sdm_entity_type}
                   </p>
                   {profile.description && (
-                    <p className="text-sm text-gray-500 mt-1">{profile.description}</p>
+                    <p className="text-sm text-nkz-muted mt-1 truncate max-w-md">{profile.description}</p>
                   )}
+                  <p className="text-xs text-nkz-muted mt-1">
+                    {t('profiles.mappingsCount', { count: profile.mappings?.length || 0 })}
+                  </p>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setEditingProfile(profile)}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                  >
+                <div className="flex gap-1 flex-shrink-0">
+                  <Button variant="ghost" size="sm" onClick={() => setEditingProfile(profile)}>
                     <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(profile.id!)}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDelete(profile.id!)}>
+                    <Trash2 className="w-4 h-4 text-nkz-danger" />
+                  </Button>
                 </div>
               </div>
-              <div className="text-sm text-gray-500">
-                {t('profiles.mappingsCount', { count: profile.mappings.length })}
-              </div>
-            </div>
+            </Card>
           ))
         )}
       </div>
     </div>
   );
 };
+
+export default DeviceProfileManager;

@@ -16,6 +16,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useViewer, useAuth, useTranslation } from '@nekazari/sdk';
+import { SlotShell } from '@nekazari/viewer-kit';
 import { useUIKit } from '@/hooks/useUIKit';
 import { useModuleApi } from '@/services/api';
 import { RefreshCw, Plus, Trash2, AlertCircle } from 'lucide-react';
@@ -121,13 +122,14 @@ export const ExampleSlot: React.FC<ExampleSlotProps> = ({ className }) => {
   }
 
   return (
-    <Card padding="md" className={className}>
-      <div className="space-y-4">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-slate-800">
-            {t('exampleSlot.title')}
-          </h3>
+    <SlotShell moduleId="connectivity" title={t('exampleSlot.title')} className={className}>
+      <Card padding="md">
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-nkz-foreground">
+              {t('exampleSlot.title')}
+            </h3>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -213,8 +215,9 @@ export const ExampleSlot: React.FC<ExampleSlotProps> = ({ className }) => {
             </div>
           ))}
         </div>
-      </div>
-    </Card>
+        </div>
+      </Card>
+    </SlotShell>
   );
 };
 

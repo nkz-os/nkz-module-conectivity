@@ -17,4 +17,9 @@ export default defineModule({
   main: MainPage,
   api: { basePath: '/api/connectivity' },
   slots: moduleSlots as never,
+  // Required by AGENTS.md for CSP enforcement at API gateway
+  data: {
+    entities: ['DeviceProfile'],
+    timeseries: [],
+  },
 });
