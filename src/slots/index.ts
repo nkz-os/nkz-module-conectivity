@@ -1,16 +1,11 @@
 /**
  * Slot Registration for Connectivity Module
  * Defines all slots that integrate with the Unified Viewer.
- * 
+ *
  * All widgets include explicit moduleId for proper host integration.
  */
 
 import React from 'react';
-// Import slot components
-import { ExampleSlot } from '../components/slots/ExampleSlot';
-
-// Module identifier - used for all slot widgets
-const MODULE_ID = 'connectivity';
 
 // Type definitions for slot widgets (matching SDK types)
 export interface SlotWidgetDefinition {
@@ -45,16 +40,7 @@ export const moduleSlots: ModuleViewerSlots = {
   'layer-toggle': [
     // Add your layer toggle widgets here
   ],
-  'context-panel': [
-    // ExampleSlot - demonstrates API integration
-    {
-      id: 'connectivity-example',
-      moduleId: MODULE_ID,
-      component: 'ExampleSlot',
-      priority: 50,
-      localComponent: ExampleSlot,
-    }
-  ],
+  'context-panel': [],
   'bottom-panel': [],
   'entity-tree': []
 };

@@ -13,6 +13,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY requirements.txt .
 RUN pip install --no-cache-dir --user -r requirements.txt
 
+# Install nkz-platform-sdk from vendor/ (placed by CI pre-build step)
+# The SDK is a monorepo package at nkz-os/nkz (services/nkz-platform-sdk/)
+# In local dev: mount or symlink the SDK into backend/vendor/nkz-platform-sdk/
+COPY vendor/ vendor/
+RUN if [ -f vendor/nkz-platform-sdk/pyproject.toml ]; then \
+        pip install --no-cache-dir --user vendor/nkz-platform-sdk; \
+    else \
+        echo "WARNING: nkz-platform-sdk not vendored — module will fail at runtime"; \
+    fi
+
 # Stage 2: Production image
 FROM python:3.11-slim
 

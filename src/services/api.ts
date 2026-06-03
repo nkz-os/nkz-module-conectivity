@@ -15,14 +15,7 @@ export function useModuleApi() {
   });
 
   return {
-    // ExampleSlot backwards compat (deprecated)
-    getData: () => client.get('/data'),
-    getDataById: (id: string) => client.get(`/data/${id}`),
-    createData: (data: any) => client.post('/data', data),
-    updateData: (id: string, data: any) => client.put(`/data/${id}`, data),
-    deleteData: (id: string) => client.delete(`/data/${id}`),
-
-    // Profile endpoints (primary)
+    // Profile endpoints
     listProfiles: (params?: { sdm_entity_type?: string; offset?: number; limit?: number }) =>
       client.get('/profiles/', params),
     getProfile: (id: string) => client.get(`/profiles/${encodeURIComponent(id)}`),

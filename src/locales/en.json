@@ -35,22 +35,5 @@
       "save": "Error saving profile",
       "delete": "Error deleting profile"
     }
-  },
-  "exampleSlot": {
-    "loginRequired": "Please log in to use this module.",
-    "title": "Connectivity",
-    "selectedEntity": "Selected entity",
-    "entityType": "Entity type",
-    "user": "User",
-    "none": "None",
-    "unknownUser": "Unknown",
-    "emptyList": "No items yet. Click + to create one.",
-    "value": "Value: {{value}}",
-    "demoDescription": "Created from ExampleSlot",
-    "errors": {
-      "load": "Failed to load data",
-      "create": "Failed to create item",
-      "delete": "Failed to delete item"
-    }
   }
 }

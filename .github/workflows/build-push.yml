@@ -124,6 +124,14 @@ jobs:
                       type=semver,pattern={{major}}.{{minor}}
                       type=sha,prefix=
 
+            - name: Vendor nkz-platform-sdk from monorepo
+              run: |
+                  git clone --depth 1 --filter=blob:none --sparse https://github.com/nkz-os/nkz.git /tmp/nkz-monorepo
+                  cd /tmp/nkz-monorepo
+                  git sparse-checkout set services/nkz-platform-sdk
+                  mkdir -p $GITHUB_WORKSPACE/backend/vendor
+                  cp -r services/nkz-platform-sdk $GITHUB_WORKSPACE/backend/vendor/
+
             - name: Build and push Backend image
               uses: docker/build-push-action@v5
               with:

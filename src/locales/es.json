@@ -35,22 +35,5 @@
       "save": "Error guardando perfil",
       "delete": "Error eliminando perfil"
     }
-  },
-  "exampleSlot": {
-    "loginRequired": "Inicia sesión para usar este módulo.",
-    "title": "Conectividad",
-    "selectedEntity": "Entidad seleccionada",
-    "entityType": "Tipo de entidad",
-    "user": "Usuario",
-    "none": "Ninguna",
-    "unknownUser": "Desconocido",
-    "emptyList": "Aún no hay elementos. Pulsa + para crear uno.",
-    "value": "Valor: {{value}}",
-    "demoDescription": "Creado desde ExampleSlot",
-    "errors": {
-      "load": "No se han podido cargar los datos",
-      "create": "No se ha podido crear el elemento",
-      "delete": "No se ha podido eliminar el elemento"
-    }
   }
 }
