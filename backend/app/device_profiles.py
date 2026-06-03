@@ -10,7 +10,7 @@ No JWT validation in the module — the gateway already validated.
 
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
 from nkz_platform_sdk import AuthContext, require_auth
@@ -99,7 +99,7 @@ class DeviceProfileListResponse(BaseModel):
 # =============================================================================
 
 
-async def _check_profile_quota(ctx: AuthContext, app) -> None:
+async def _check_profile_quota(ctx: AuthContext, request: Request) -> None:
     """
     Check tenant has not exceeded profile creation limit.
 
@@ -112,7 +112,7 @@ async def _check_profile_quota(ctx: AuthContext, app) -> None:
         return  # tier_quotas not available in this deployment — fail open
 
     try:
-        orion = app.orion(ctx)
+        orion = request.app.orion(ctx)
 
         # Read tenant tier from Orion-LD
         try:
@@ -158,6 +158,7 @@ async def _check_profile_quota(ctx: AuthContext, app) -> None:
 
 @router.get("/", response_model=DeviceProfileListResponse)
 async def list_profiles(
+    request: Request,
     ctx: AuthContext = require_auth(),
     sdm_entity_type: Optional[str] = Query(None, description="Filter by SDM entity type"),
     include_public: bool = Query(True, description="Include public template profiles"),
@@ -165,7 +166,7 @@ async def list_profiles(
     limit: int = Query(50, ge=1, le=200),
 ):
     """List device profiles for the current tenant, with pagination."""
-    orion = app.orion(ctx)
+    orion = request.app.orion(ctx)
 
     # Build NGSI-LD query
     q_parts = []
@@ -201,13 +202,14 @@ async def list_profiles(
 @router.post("/", response_model=DeviceProfileResponse, status_code=201)
 async def create_profile(
     profile: DeviceProfileCreate,
+    request: Request,
     ctx: AuthContext = require_auth(),
 ):
     """Create a new device profile for the current tenant."""
-    orion = app.orion(ctx)
+    orion = request.app.orion(ctx)
 
     # Enforce tier quotas (fail-open)
-    await _check_profile_quota(ctx, app)
+    await _check_profile_quota(ctx, request)
 
     entity = build_device_profile_entity(
         tenant_id=ctx.tenant_id,
@@ -232,10 +234,11 @@ async def create_profile(
 @router.get("/{profile_id}", response_model=DeviceProfileResponse)
 async def get_profile(
     profile_id: str,
+    request: Request,
     ctx: AuthContext = require_auth(),
 ):
     """Get a specific device profile by ID (URN or short ID)."""
-    orion = app.orion(ctx)
+    orion = request.app.orion(ctx)
 
     # Normalize ID: accept both "urn:ngsi-ld:DeviceProfile:abc" and "abc"
     if not profile_id.startswith("urn:"):
@@ -261,10 +264,11 @@ async def get_profile(
 async def update_profile(
     profile_id: str,
     updated: DeviceProfileUpdate,
+    request: Request,
     ctx: AuthContext = require_auth(),
 ):
     """Update a device profile (tenant ownership required)."""
-    orion = app.orion(ctx)
+    orion = request.app.orion(ctx)
 
     if not profile_id.startswith("urn:"):
         profile_id = f"urn:ngsi-ld:DeviceProfile:{profile_id}"
@@ -307,10 +311,11 @@ async def update_profile(
 @router.delete("/{profile_id}", status_code=204)
 async def delete_profile(
     profile_id: str,
+    request: Request,
     ctx: AuthContext = require_auth(),
 ):
     """Delete a device profile (tenant ownership required)."""
-    orion = app.orion(ctx)
+    orion = request.app.orion(ctx)
 
     if not profile_id.startswith("urn:"):
         profile_id = f"urn:ngsi-ld:DeviceProfile:{profile_id}"
@@ -331,7 +336,7 @@ async def delete_profile(
 
 
 @router.get("/schemas/sdm-types")
-async def get_sdm_schemas(ctx: AuthContext = require_auth()):
+async def get_sdm_schemas(request: Request, ctx: AuthContext = require_auth()):
     """
     Get available SDM entity types for mapping.
 
