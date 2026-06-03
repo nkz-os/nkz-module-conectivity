@@ -1,248 +1,371 @@
 """
-Connectivity Module - Device Profiles API
+Connectivity Module — Device Profiles API (NGSI-LD backend).
 
-Manages Device Profiles for IoT data transformation from raw incoming data
-to NGSI-LD/SDM compliant attributes.
+Uses OrionClient (nkz-platform-sdk) for all storage.
+ZERO direct DB writes — Orion-LD is the sole source of truth.
+
+Auth is handled by api-gateway headers via require_auth().
+No JWT validation in the module — the gateway already validated.
 """
 
-from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, Field
-from typing import List, Optional, Dict, Any
-from datetime import datetime
-from bson import ObjectId
-from bson.errors import InvalidId
-import pymongo
-from pymongo import MongoClient
+from typing import Optional
 
-from app.config import get_settings
-from app.middleware import get_current_user, get_tenant_id, TokenPayload
+from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
+
+from nkz_platform_sdk import AuthContext, require_auth
+
+from app.orion_profiles import (
+    PROFILE_ENTITY_TYPE,
+    build_device_profile_entity,
+    build_profile_update_attrs,
+    profile_entity_to_response,
+)
 
 router = APIRouter(prefix="/profiles", tags=["Device Profiles"])
+
 
 # =============================================================================
 # Pydantic Models
 # =============================================================================
 
+
 class MappingEntry(BaseModel):
+    """Single attribute mapping from incoming key to NGSI-LD attribute."""
+
     incoming_key: str = Field(..., description="Key from incoming device data")
     target_attribute: str = Field(..., description="Target NGSI-LD attribute name")
-    type: str = Field(default="Number", description="Data type (Number, Text, Boolean, etc.)")
-    transformation: Optional[str] = Field(None, description="JEXL transformation expression (e.g., 'val * 100')")
+    type: str = Field(
+        default="Number", description="Data type (Number, Text, Boolean)"
+    )
+    transformation: Optional[str] = Field(
+        None, description="JEXL expression (e.g. 'val * 100')"
+    )
     unit: Optional[str] = Field(None, description="Unit of measurement")
 
+
 class DeviceProfileCreate(BaseModel):
-    name: str = Field(..., description="Profile name")
-    description: Optional[str] = Field(None, description="Profile description")
-    manufacturer: Optional[str] = Field(None, description="Device manufacturer")
-    model: Optional[str] = Field(None, description="Device model")
-    sdm_entity_type: str = Field(..., description="Target SDM entity type (e.g., AgriSensor)")
-    mappings: List[MappingEntry] = Field(..., description="Data transformations")
-    is_public: bool = Field(default=False, description="Public template profile")
+    """Payload for creating a new device profile."""
 
-class DeviceProfile(DeviceProfileCreate):
-    id: str = Field(..., description="Profile ID")
-    tenant_id: str = Field(..., description="Owning tenant")
-    created_at: datetime
-    updated_at: datetime
+    name: str = Field(..., min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=2000)
+    manufacturer: Optional[str] = Field(None, max_length=200)
+    model: Optional[str] = Field(None, max_length=200)
+    sdm_entity_type: str = Field(..., min_length=1)
+    mappings: list[MappingEntry] = Field(default_factory=list)
+    is_public: bool = Field(default=False)
 
-    class Config:
-        json_encoders = {
-            ObjectId: str,
-            datetime: lambda v: v.isoformat()
-        }
+
+class DeviceProfileUpdate(BaseModel):
+    """Payload for updating an existing profile (all fields optional)."""
+
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=2000)
+    manufacturer: Optional[str] = Field(None, max_length=200)
+    model: Optional[str] = Field(None, max_length=200)
+    sdm_entity_type: Optional[str] = Field(None, min_length=1)
+    mappings: Optional[list[MappingEntry]] = None
+    is_public: Optional[bool] = None
+
+
+class DeviceProfileResponse(BaseModel):
+    """API response for a single device profile."""
+
+    id: str
+    name: str
+    description: Optional[str] = None
+    manufacturer: Optional[str] = None
+    model: Optional[str] = None
+    sdm_entity_type: str
+    mappings: list[MappingEntry] = []
+    is_public: bool = False
+    tenant_id: str = ""
+    created_by: Optional[str] = None
+    created_at: str = ""
+    updated_at: str = ""
+
+
+class DeviceProfileListResponse(BaseModel):
+    """Paginated list response for device profiles."""
+
+    items: list[DeviceProfileResponse]
+    total: int
+    offset: int
+    limit: int
+
 
 # =============================================================================
-# MongoDB Connection
+# Quota enforcement (fail-open per AGENTS.md)
 # =============================================================================
 
-def get_mongodb():
-    """Get MongoDB client"""
-    settings = get_settings()
-    client = MongoClient(settings.mongodb_url)
-    return client
 
-def get_profiles_collection():
-    """Get device profiles collection"""
-    client = get_mongodb()
-    db = client.nekazari
-    return db.device_profiles
+async def _check_profile_quota(ctx: AuthContext, app) -> None:
+    """
+    Check tenant has not exceeded profile creation limit.
+
+    Design: fail-open. If tier_quotas is unavailable or Orion-LD is unreachable,
+    the operation proceeds. Only enforced when all dependencies are available.
+    """
+    try:
+        from services.common.tier_quotas import quotas_for_tier
+    except ImportError:
+        return  # tier_quotas not available in this deployment — fail open
+
+    try:
+        orion = app.orion(ctx)
+
+        # Read tenant tier from Orion-LD
+        try:
+            tenant_entity = await orion.get_entity(
+                f"urn:ngsi-ld:Tenant:{ctx.tenant_id}"
+            )
+            tier = (
+                (tenant_entity.get("tier", {}) or {}).get("value")
+                or (tenant_entity.get("planName", {}) or {}).get("value")
+                or "basic"
+            )
+        except Exception:
+            tier = "basic"
+
+        quotas = quotas_for_tier(tier)
+        max_entities = quotas.get("max_entities_total")
+
+        if max_entities is not None:
+            existing = await orion.query_entities(
+                type=PROFILE_ENTITY_TYPE,
+                q=f'refTenant=="urn:ngsi-ld:Tenant:{ctx.tenant_id}"',
+                limit=0,
+                attrs="id",
+            )
+            if len(existing) >= max_entities:
+                raise HTTPException(
+                    status_code=403,
+                    detail=(
+                        f"Profile limit reached for tier '{tier}' "
+                        f"({max_entities} max). Upgrade your plan."
+                    ),
+                )
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # fail open — allow creation if quota check fails
+
 
 # =============================================================================
-# API Endpoints
+# Endpoints
 # =============================================================================
 
-@router.get("/", response_model=List[DeviceProfile])
+
+@router.get("/", response_model=DeviceProfileListResponse)
 async def list_profiles(
-    tenant_id: str = Depends(get_tenant_id),
-    sdm_entity_type: Optional[str] = None,
-    include_public: bool = True
+    ctx: AuthContext = require_auth(),
+    sdm_entity_type: Optional[str] = Query(None, description="Filter by SDM entity type"),
+    include_public: bool = Query(True, description="Include public template profiles"),
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
 ):
-    """
-    List device profiles for current tenant.
-    
-    Args:
-        sdm_entity_type: Filter by SDM entity type
-        include_public: Include public template profiles
-    """
-    collection = get_profiles_collection()
-    
-    # Build query
-    query = {}
+    """List device profiles for the current tenant, with pagination."""
+    orion = app.orion(ctx)
+
+    # Build NGSI-LD query
+    q_parts = []
     if include_public:
-        query["$or"] = [
-            {"tenant_id": tenant_id},
-            {"is_public": True}
-        ]
+        q_parts.append(
+            f'(refTenant=="urn:ngsi-ld:Tenant:{ctx.tenant_id}"|isPublic==true)'
+        )
     else:
-        query["tenant_id"] = tenant_id
-    
+        q_parts.append(f'refTenant=="urn:ngsi-ld:Tenant:{ctx.tenant_id}"')
+
     if sdm_entity_type:
-        query["sdm_entity_type"] = sdm_entity_type
-    
-    # Fetch profiles
-    profiles = list(collection.find(query).sort("name", 1))
-    
-    # Convert to response model
-    result = []
-    for profile in profiles:
-        profile["id"] = str(profile["_id"])
-        del profile["_id"]
-        result.append(DeviceProfile(**profile))
-    
-    return result
+        q_parts.append(f'sdmEntityType=="{sdm_entity_type}"')
+
+    q = ";".join(q_parts) if q_parts else None
+
+    entities = await orion.query_entities(
+        type=PROFILE_ENTITY_TYPE,
+        q=q,
+        limit=limit,
+        offset=offset,
+    )
+
+    items = [DeviceProfileResponse(**profile_entity_to_response(e)) for e in entities]
+
+    return DeviceProfileListResponse(
+        items=items,
+        total=len(items),
+        offset=offset,
+        limit=limit,
+    )
 
 
-@router.post("/", response_model=DeviceProfile, status_code=201)
+@router.post("/", response_model=DeviceProfileResponse, status_code=201)
 async def create_profile(
     profile: DeviceProfileCreate,
-    user: TokenPayload = Depends(get_current_user),
-    tenant_id: str = Depends(get_tenant_id)
+    ctx: AuthContext = require_auth(),
 ):
-    """Create a new device profile"""
-    collection = get_profiles_collection()
-    
-    # Build document
-    now = datetime.utcnow()
-    doc = profile.dict()
-    doc["tenant_id"] = tenant_id
-    doc["created_by"] = user.email
-    doc["created_at"] = now
-    doc["updated_at"] = now
-    
-    # Insert
-    result = collection.insert_one(doc)
-    
-    # Return created profile
-    doc["id"] = str(result.inserted_id)
-    del doc["_id"]
-    return DeviceProfile(**doc)
+    """Create a new device profile for the current tenant."""
+    orion = app.orion(ctx)
+
+    # Enforce tier quotas (fail-open)
+    await _check_profile_quota(ctx, app)
+
+    entity = build_device_profile_entity(
+        tenant_id=ctx.tenant_id,
+        name=profile.name,
+        sdm_entity_type=profile.sdm_entity_type,
+        mappings=[m.model_dump() for m in profile.mappings],
+        description=profile.description,
+        manufacturer=profile.manufacturer,
+        model=profile.model,
+        is_public=profile.is_public,
+        created_by=ctx.user_id,
+    )
+
+    result = await orion.create_entity(entity)
+    entity_id = result.get("id") or entity["id"]
+
+    # Fetch the created entity for full response
+    created = await orion.get_entity(entity_id)
+    return DeviceProfileResponse(**profile_entity_to_response(created))
 
 
-@router.get("/{profile_id}", response_model=DeviceProfile)
+@router.get("/{profile_id}", response_model=DeviceProfileResponse)
 async def get_profile(
     profile_id: str,
-    tenant_id: str = Depends(get_tenant_id)
+    ctx: AuthContext = require_auth(),
 ):
-    """Get a specific device profile"""
-    collection = get_profiles_collection()
-    
+    """Get a specific device profile by ID (URN or short ID)."""
+    orion = app.orion(ctx)
+
+    # Normalize ID: accept both "urn:ngsi-ld:DeviceProfile:abc" and "abc"
+    if not profile_id.startswith("urn:"):
+        profile_id = f"urn:ngsi-ld:DeviceProfile:{profile_id}"
+
     try:
-        profile = collection.find_one({
-            "_id": ObjectId(profile_id),
-            "$or": [
-                {"tenant_id": tenant_id},
-                {"is_public": True}
-            ]
-        })
-    except InvalidId:
-        raise HTTPException(status_code=400, detail="Invalid profile ID")
-    
-    if not profile:
+        entity = await orion.get_entity(profile_id)
+    except Exception:
         raise HTTPException(status_code=404, detail="Profile not found")
-    
-    profile["id"] = str(profile["_id"])
-    del profile["_id"]
-    return DeviceProfile(**profile)
+
+    if entity.get("type") != PROFILE_ENTITY_TYPE:
+        raise HTTPException(status_code=404, detail="Not a DeviceProfile entity")
+
+    # Access control: tenant-owned or public
+    resp = profile_entity_to_response(entity)
+    if resp["tenant_id"] != ctx.tenant_id and not resp["is_public"]:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    return DeviceProfileResponse(**resp)
 
 
-@router.put("/{profile_id}", response_model=DeviceProfile)
+@router.put("/{profile_id}", response_model=DeviceProfileResponse)
 async def update_profile(
     profile_id: str,
-    updated: DeviceProfileCreate,
-    user: TokenPayload = Depends(get_current_user),
-    tenant_id: str = Depends(get_tenant_id)
+    updated: DeviceProfileUpdate,
+    ctx: AuthContext = require_auth(),
 ):
-    """Update a device profile (tenant ownership required)"""
-    collection = get_profiles_collection()
-    
+    """Update a device profile (tenant ownership required)."""
+    orion = app.orion(ctx)
+
+    if not profile_id.startswith("urn:"):
+        profile_id = f"urn:ngsi-ld:DeviceProfile:{profile_id}"
+
     try:
-        # Check ownership
-        existing = collection.find_one({
-            "_id": ObjectId(profile_id),
-            "tenant_id": tenant_id
-        })
-    except InvalidId:
-        raise HTTPException(status_code=400, detail="Invalid profile ID")
-    
-    if not existing:
-        raise HTTPException(status_code=404, detail="Profile not found or not owned by tenant")
-    
-    # Update document
-    update_doc = updated.dict()
-    update_doc["updated_at"] = datetime.utcnow()
-    update_doc["updated_by"] = user.email
-    
-    collection.update_one(
-        {"_id": ObjectId(profile_id)},
-        {"$set": update_doc}
+        entity = await orion.get_entity(profile_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    if entity.get("type") != PROFILE_ENTITY_TYPE:
+        raise HTTPException(status_code=404, detail="Not a DeviceProfile entity")
+
+    # Ownership check
+    resp = profile_entity_to_response(entity)
+    if resp["tenant_id"] != ctx.tenant_id:
+        raise HTTPException(status_code=403, detail="Not owned by your tenant")
+
+    # Build update attrs (only provided fields)
+    attrs = build_profile_update_attrs(
+        name=updated.name,
+        description=updated.description,
+        manufacturer=updated.manufacturer,
+        model=updated.model,
+        sdm_entity_type=updated.sdm_entity_type,
+        mappings=(
+            [m.model_dump() for m in updated.mappings]
+            if updated.mappings is not None
+            else None
+        ),
+        is_public=updated.is_public,
     )
-    
-    # Fetch and return updated profile
-    profile = collection.find_one({"_id": ObjectId(profile_id)})
-    profile["id"] = str(profile["_id"])
-    del profile["_id"]
-    return DeviceProfile(**profile)
+
+    await orion.update_entity_attrs(profile_id, attrs)
+
+    # Fetch and return updated entity
+    updated_entity = await orion.get_entity(profile_id)
+    return DeviceProfileResponse(**profile_entity_to_response(updated_entity))
 
 
 @router.delete("/{profile_id}", status_code=204)
 async def delete_profile(
     profile_id: str,
-    user: TokenPayload = Depends(get_current_user),
-    tenant_id: str = Depends(get_tenant_id)
+    ctx: AuthContext = require_auth(),
 ):
-    """Delete a device profile (tenant ownership required)"""
-    collection = get_profiles_collection()
-    
+    """Delete a device profile (tenant ownership required)."""
+    orion = app.orion(ctx)
+
+    if not profile_id.startswith("urn:"):
+        profile_id = f"urn:ngsi-ld:DeviceProfile:{profile_id}"
+
     try:
-        result = collection.delete_one({
-            "_id": ObjectId(profile_id),
-            "tenant_id": tenant_id
-        })
-    except InvalidId:
-        raise HTTPException(status_code=400, detail="Invalid profile ID")
-    
-    if result.deleted_count == 0:
-        raise HTTPException(status_code=404, detail="Profile not found or not owned by tenant")
-    
-    return None
+        entity = await orion.get_entity(profile_id)
+    except Exception:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    if entity.get("type") != PROFILE_ENTITY_TYPE:
+        raise HTTPException(status_code=404, detail="Not a DeviceProfile entity")
+
+    resp = profile_entity_to_response(entity)
+    if resp["tenant_id"] != ctx.tenant_id:
+        raise HTTPException(status_code=403, detail="Not owned by your tenant")
+
+    await orion.delete_entity(profile_id)
 
 
-@router.get("/schemas/sdm-types", response_model=Dict[str, Any])
-async def get_sdm_schemas():
+@router.get("/schemas/sdm-types")
+async def get_sdm_schemas(ctx: AuthContext = require_auth()):
     """
-    Get available SDM entity types and their attributes for mapping.
-    This helps users know what target attributes are available.
+    Get available SDM entity types for mapping.
+
+    Returns known IoT-related types. In the future this could dynamically
+    proxy Orion-LD to discover registered entity types.
     """
-    # This could be enhanced to dynamically fetch from SDM service
-    # For now, return common IoT types
     return {
-        "AgriSensor": {
-            "attributes": ["temperature", "humidity", "soilMoisture", "batteryLevel", "rssi"]
-        },
-        "WeatherStation": {
-            "attributes": ["temperature", "humidity", "pressure", "windSpeed", "windDirection", "precipitation"]
-        },
-        "Device": {
-            "attributes": ["value", "batteryLevel", "rssi", "status"]
+        "types": {
+            "AgriSensor": [
+                "temperature",
+                "humidity",
+                "soilMoisture",
+                "batteryLevel",
+                "rssi",
+            ],
+            "WeatherStation": [
+                "temperature",
+                "humidity",
+                "pressure",
+                "windSpeed",
+                "windDirection",
+                "precipitation",
+            ],
+            "Device": [
+                "value",
+                "batteryLevel",
+                "rssi",
+                "status",
+            ],
+            "AgriParcel": [
+                "area",
+                "crop",
+                "soilType",
+                "irrigation",
+            ],
         }
     }
