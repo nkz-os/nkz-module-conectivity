@@ -1,0 +1,70 @@
+{
+  "id": "connectivity",
+  "name": "connectivity",
+  "display_name": "Connectivity",
+  "version": "1.0.0",
+  "description": "IoT Device Connectivity Manager - Manage Device Profiles and configure data transformation for IoT sensors",
+  "description_i18n": {
+    "es": "Gestor de Conectividad de Dispositivos IoT — Administra Perfiles de Dispositivo y configura la transformación de datos para sensores IoT",
+    "en": "IoT Device Connectivity Manager - Manage Device Profiles and configure data transformation for IoT sensors",
+    "eu": "IoT Gailuen Konektibitate Kudeatzailea — Gailuen Profilak kudeatu eta datu-transformazioa konfiguratu IoT sentsoreentzat",
+    "fr": "Gestionnaire de Connectivité des Dispositifs IoT — Gérez les Profils de Dispositif et configurez la transformation des données pour les capteurs IoT",
+    "pt": "Gestor de Conectividade de Dispositivos IoT — Gerencie Perfis de Dispositivo e configure a transformação de dados para sensores IoT",
+    "ca": "Gestor de Connectivitat de Dispositius IoT — Administra Perfils de Dispositiu i configura la transformació de dades per a sensors IoT"
+  },
+  "short_description": "Manage IoT device profiles and data mappings",
+  "author": {
+    "name": "Nekazari Team",
+    "email": "no-reply@robotika.cloud",
+    "organization": "Nekazari Platform"
+  },
+  "category": "iot",
+  "module_type": "ADDON_CORE",
+  "required_plan_type": "free",
+  "pricing_tier": "FREE",
+  "route_path": "/connectivity",
+  "label": "Connectivity",
+  "icon": "radio",
+  "icon_url": "assets/icon.png",
+  "required_roles": [
+    "Farmer",
+    "TenantAdmin",
+    "PlatformAdmin"
+  ],
+  "dependencies": {
+    "sdk_version": "^1.0.0",
+    "react_version": "^18.3.1",
+    "platform_version": "^2.0.0"
+  },
+  "permissions": {
+    "api_access": [
+      "/api/connectivity/*"
+    ],
+    "storage_access": false,
+    "external_requests": []
+  },
+  "build_config": {
+    "type": "iife",
+    "entry": "nkz-module.js"
+  },
+  "metadata": {
+    "icon": "📡",
+    "color": "#3B82F6",
+    "features": [
+      "Device Profile Management",
+      "No-Code Data Mapping",
+      "SDM Attribute Discovery",
+      "JEXL Transformations",
+      "Ingestion Monitoring"
+    ],
+    "screenshots": [
+      "assets/screenshot1.png"
+    ],
+    "slots": {
+      "layer-toggle": [],
+      "context-panel": [],
+      "bottom-panel": [],
+      "entity-tree": []
+    }
+  }
+}
