@@ -4,7 +4,7 @@
   "description": "Connectivity - Module for Nekazari Platform",
   "license": "AGPL-3.0-only",
   "type": "module",
-  "packageManager": "pnpm@9",
+  "packageManager": "pnpm@9.0.0",
   "main": "./src/Module.tsx",
   "nkz": {
     "moduleId": "connectivity"
