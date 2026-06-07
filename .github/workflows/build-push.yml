@@ -18,8 +18,8 @@ on:
 
 env:
     REGISTRY: ghcr.io
-    FRONTEND_IMAGE: ghcr.io/nkz-os/connectivity-frontend
-    BACKEND_IMAGE: ghcr.io/nkz-os/connectivity-backend
+    FRONTEND_IMAGE: ghcr.io/${{ github.repository }}/connectivity-frontend
+    BACKEND_IMAGE: ghcr.io/${{ github.repository }}/connectivity-backend
 
 jobs:
     # ==========================================================================
