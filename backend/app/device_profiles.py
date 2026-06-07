@@ -133,7 +133,7 @@ async def _check_profile_quota(ctx: AuthContext, request: Request) -> None:
         if max_entities is not None:
             existing = await orion.query_entities(
                 type=PROFILE_ENTITY_TYPE,
-                q=f'refTenant=="urn:ngsi-ld:Tenant:{ctx.tenant_id}"',
+                q=f'belongsTo=="urn:ngsi-ld:Tenant:{ctx.tenant_id}"',
                 limit=0,
                 attrs="id",
             )
@@ -172,10 +172,10 @@ async def list_profiles(
     q_parts = []
     if include_public:
         q_parts.append(
-            f'(refTenant=="urn:ngsi-ld:Tenant:{ctx.tenant_id}"|isPublic==true)'
+            f'(belongsTo=="urn:ngsi-ld:Tenant:{ctx.tenant_id}"|isPublic==true)'
         )
     else:
-        q_parts.append(f'refTenant=="urn:ngsi-ld:Tenant:{ctx.tenant_id}"')
+        q_parts.append(f'belongsTo=="urn:ngsi-ld:Tenant:{ctx.tenant_id}"')
 
     if sdm_entity_type:
         q_parts.append(f'sdmEntityType=="{sdm_entity_type}"')

@@ -73,7 +73,7 @@ class TestDeviceProfilesCRUD:
                     ],
                 },
                 "isPublic": {"type": "Property", "value": False},
-                "refTenant": {
+                "belongsTo": {
                     "type": "Relationship",
                     "object": "urn:ngsi-ld:Tenant:testtenant",
                 },
@@ -141,7 +141,7 @@ class TestDeviceProfilesCRUD:
         entity_arg = mock_orion_client.create_entity.call_args.args[0]
         assert entity_arg["type"] == "DeviceProfile"
         assert entity_arg["name"]["value"] == "New Profile"
-        assert entity_arg["refTenant"]["object"] == "urn:ngsi-ld:Tenant:testtenant"
+        assert entity_arg["belongsTo"]["object"] == "urn:ngsi-ld:Tenant:testtenant"
 
     def test_create_profile_validation_name_required(self, auth_client):
         response = auth_client.post(
@@ -207,7 +207,7 @@ class TestDeviceProfilesCRUD:
             "sdmEntityType": {"type": "Property", "value": "Device"},
             "mappings": {"type": "Property", "value": []},
             "isPublic": {"type": "Property", "value": False},
-            "refTenant": {
+            "belongsTo": {
                 "type": "Relationship",
                 "object": "urn:ngsi-ld:Tenant:othertenant",
             },
@@ -249,7 +249,7 @@ class TestDeviceProfilesCRUD:
             "sdmEntityType": {"type": "Property", "value": "Device"},
             "mappings": {"type": "Property", "value": []},
             "isPublic": {"type": "Property", "value": False},
-            "refTenant": {
+            "belongsTo": {
                 "type": "Relationship",
                 "object": "urn:ngsi-ld:Tenant:othertenant",
             },
@@ -310,7 +310,7 @@ class TestOrionProfileBuilders:
         assert entity["manufacturer"]["value"] == "ACME"
         assert entity["model"]["value"] == "M100"
         assert entity["createdBy"]["value"] == "user1"
-        assert entity["refTenant"]["object"] == "urn:ngsi-ld:Tenant:t1"
+        assert entity["belongsTo"]["object"] == "urn:ngsi-ld:Tenant:t1"
 
     def test_profile_entity_to_response(self):
         from app.orion_profiles import profile_entity_to_response
@@ -326,7 +326,7 @@ class TestOrionProfileBuilders:
             },
             "isPublic": {"type": "Property", "value": True},
             "description": {"type": "Property", "value": "desc"},
-            "refTenant": {"type": "Relationship", "object": "urn:ngsi-ld:Tenant:t1"},
+            "belongsTo": {"type": "Relationship", "object": "urn:ngsi-ld:Tenant:t1"},
             "createdAt": {"type": "Property", "value": "2026-01-01T00:00:00+00:00"},
             "updatedAt": {"type": "Property", "value": "2026-01-01T00:00:00+00:00"},
         }

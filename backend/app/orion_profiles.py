@@ -4,7 +4,7 @@ NGSI-LD DeviceProfile entity builder and helpers.
 Entity type: DeviceProfile (custom — no exact match in Smart Data Models).
 Per AGENTS.md: "If unavailable, use a generic entity or Property."
 
-Each DeviceProfile entity belongs to a tenant via refTenant relationship.
+Each DeviceProfile entity belongs to a tenant via belongsTo relationship.
 """
 
 import json
@@ -45,7 +45,7 @@ def build_device_profile_entity(
         "isPublic": {"type": "Property", "value": is_public},
         "createdAt": {"type": "Property", "value": now},
         "updatedAt": {"type": "Property", "value": now},
-        "refTenant": {
+        "belongsTo": {
             "type": "Relationship",
             "object": f"urn:ngsi-ld:Tenant:{tenant_id}",
         },
@@ -100,8 +100,8 @@ def profile_entity_to_response(entity: dict[str, Any]) -> dict[str, Any]:
 
 
 def _extract_tenant_id(entity: dict[str, Any]) -> str:
-    """Extract tenant ID from refTenant relationship URN."""
-    ref = entity.get("refTenant", {})
+    """Extract tenant ID from belongsTo relationship URN. Falls back to legacy refTenant."""
+    ref = entity.get("belongsTo") or entity.get("refTenant", {})
     if isinstance(ref, dict):
         obj = ref.get("object", "")
         if isinstance(obj, str) and ":" in obj:

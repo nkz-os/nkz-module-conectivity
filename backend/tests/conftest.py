@@ -39,7 +39,7 @@ def mock_orion_client():
         "sdmEntityType": {"type": "Property", "value": "AgriSensor"},
         "mappings": {"type": "Property", "value": []},
         "isPublic": {"type": "Property", "value": False},
-        "refTenant": {
+        "belongsTo": {
             "type": "Relationship",
             "object": "urn:ngsi-ld:Tenant:testtenant",
         },
