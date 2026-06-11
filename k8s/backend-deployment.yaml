@@ -30,8 +30,10 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/nkz-os/connectivity-backend:v1.0.1
-          imagePullPolicy: Always
+          # Pinned by digest (= v1.0.1): mutable tags + pullPolicy Always mean a
+          # plain pod restart can silently change the running code (CLAUDE.md §K8s).
+          image: ghcr.io/nkz-os/connectivity-backend@sha256:98d9eafae5b23ba0d287245cd5eb56192629026770e09e09d33b9eb9f4fa3edb
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8000

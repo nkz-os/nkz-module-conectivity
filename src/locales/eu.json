@@ -1,0 +1,39 @@
+{
+  "app": {
+    "title": "Konektibitate kudeatzailea"
+  },
+  "profiles": {
+    "loading": "Profilak kargatzen...",
+    "title": "Gailu-profilak",
+    "newButton": "Profil berria",
+    "createTitle": "Profila sortu",
+    "editTitle": "Profila editatu",
+    "nameLabel": "Izena *",
+    "sdmTypeLabel": "SDM mota *",
+    "manufacturerLabel": "Fabrikatzailea",
+    "modelLabel": "Modeloa",
+    "descriptionLabel": "Deskribapena",
+    "mappingsTitle": "Atributu-mapaketak",
+    "addMapping": "+ Mapaketa gehitu",
+    "placeholderIncoming": "Sarrerako gakoa (adib.: t)",
+    "placeholderTarget": "Helburuko atributua (adib.: temperature)",
+    "typeNumber": "Number",
+    "typeText": "Text",
+    "typeBoolean": "Boolean",
+    "placeholderTransform": "Transformazioa (adib.: val * 100)",
+    "cancel": "Utzi",
+    "save": "Gorde",
+    "empty": "Ez dago profilik. Sortu bat hasteko.",
+    "mappingsCount": "{{count}} mapaketa konfiguratuta",
+    "confirmDelete": "Profil hau ezabatu?",
+    "errors": {
+      "unauthorizedFull": "Baimenik gabe. Hasi saioa berriro.",
+      "unauthorizedShort": "Baimenik gabe",
+      "loadProfiles": "Errorea profilak kargatzean",
+      "http": "Errorea {{status}}: {{statusText}}",
+      "httpShort": "Errorea {{status}}",
+      "save": "Errorea profila gordetzean",
+      "delete": "Errorea profila ezabatzean"
+    }
+  }
+}

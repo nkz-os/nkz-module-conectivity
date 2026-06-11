@@ -349,3 +349,117 @@ class TestOrionProfileBuilders:
         assert attrs["isPublic"]["value"] is True
         # description was not provided, should not be in attrs
         assert "description" not in attrs
+
+
+def _profile_entity(*, tenant: str, is_public: bool, entity_type: str = "DeviceProfile"):
+    """NGSI-LD DeviceProfile entity owned by `tenant`."""
+    return {
+        "id": "urn:ngsi-ld:DeviceProfile:shared1",
+        "type": entity_type,
+        "name": {"type": "Property", "value": "Shared Profile"},
+        "sdmEntityType": {"type": "Property", "value": "AgriSensor"},
+        "mappings": {"type": "Property", "value": []},
+        "isPublic": {"type": "Property", "value": is_public},
+        "belongsTo": {
+            "type": "Relationship",
+            "object": f"urn:ngsi-ld:Tenant:{tenant}",
+        },
+        "createdAt": {"type": "Property", "value": "2026-01-01T00:00:00+00:00"},
+        "updatedAt": {"type": "Property", "value": "2026-01-01T00:00:00+00:00"},
+    }
+
+
+class TestPublicProfileAccess:
+    """Cross-tenant access rules: public profiles are readable, never writable."""
+
+    def test_get_public_profile_other_tenant_allowed(
+        self, auth_client, mock_orion_client
+    ):
+        """A public profile owned by another tenant is readable (template reuse)."""
+        mock_orion_client.get_entity.return_value = _profile_entity(
+            tenant="othertenant", is_public=True
+        )
+        response = auth_client.get("/api/connectivity/profiles/shared1")
+        assert response.status_code == 200
+        assert response.json()["is_public"] is True
+
+    def test_get_private_profile_other_tenant_hidden(
+        self, auth_client, mock_orion_client
+    ):
+        """A private profile of another tenant returns 404 (no existence leak)."""
+        mock_orion_client.get_entity.return_value = _profile_entity(
+            tenant="othertenant", is_public=False
+        )
+        response = auth_client.get("/api/connectivity/profiles/shared1")
+        assert response.status_code == 404
+
+    def test_update_public_profile_other_tenant_forbidden(
+        self, auth_client, mock_orion_client
+    ):
+        """Public profiles are read-only for non-owners: update is 403."""
+        mock_orion_client.get_entity.return_value = _profile_entity(
+            tenant="othertenant", is_public=True
+        )
+        response = auth_client.put(
+            "/api/connectivity/profiles/shared1", json={"name": "Hijacked"}
+        )
+        assert response.status_code == 403
+        mock_orion_client.update_entity_attrs.assert_not_called()
+
+    def test_delete_public_profile_other_tenant_forbidden(
+        self, auth_client, mock_orion_client
+    ):
+        """Public profiles are read-only for non-owners: delete is 403."""
+        mock_orion_client.get_entity.return_value = _profile_entity(
+            tenant="othertenant", is_public=True
+        )
+        response = auth_client.delete("/api/connectivity/profiles/shared1")
+        assert response.status_code == 403
+        mock_orion_client.delete_entity.assert_not_called()
+
+
+class TestListVisibilityFilters:
+    """include_public toggles the public-template clause in the Orion query."""
+
+    def test_list_include_public_default_queries_public(
+        self, auth_client, mock_orion_client
+    ):
+        mock_orion_client.query_entities.return_value = []
+        response = auth_client.get("/api/connectivity/profiles/")
+        assert response.status_code == 200
+        q = mock_orion_client.query_entities.call_args.kwargs["q"]
+        assert "isPublic==true" in q
+
+    def test_list_exclude_public_omits_public_clause(
+        self, auth_client, mock_orion_client
+    ):
+        mock_orion_client.query_entities.return_value = []
+        response = auth_client.get(
+            "/api/connectivity/profiles/?include_public=false"
+        )
+        assert response.status_code == 200
+        q = mock_orion_client.query_entities.call_args.kwargs["q"]
+        assert "isPublic" not in q
+        assert 'belongsTo=="urn:ngsi-ld:Tenant:testtenant"' in q
+
+
+class TestWrongEntityType:
+    """Operations against a non-DeviceProfile entity must 404, never mutate."""
+
+    def test_update_wrong_type_returns_404(self, auth_client, mock_orion_client):
+        mock_orion_client.get_entity.return_value = _profile_entity(
+            tenant="testtenant", is_public=False, entity_type="AgriParcel"
+        )
+        response = auth_client.put(
+            "/api/connectivity/profiles/shared1", json={"name": "X"}
+        )
+        assert response.status_code == 404
+        mock_orion_client.update_entity_attrs.assert_not_called()
+
+    def test_delete_wrong_type_returns_404(self, auth_client, mock_orion_client):
+        mock_orion_client.get_entity.return_value = _profile_entity(
+            tenant="testtenant", is_public=False, entity_type="AgriParcel"
+        )
+        response = auth_client.delete("/api/connectivity/profiles/shared1")
+        assert response.status_code == 404
+        mock_orion_client.delete_entity.assert_not_called()
