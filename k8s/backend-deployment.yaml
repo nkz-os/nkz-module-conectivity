@@ -32,7 +32,7 @@ spec:
         - name: backend
           # Pinned by digest (= v1.0.1): mutable tags + pullPolicy Always mean a
           # plain pod restart can silently change the running code (CLAUDE.md §K8s).
-          image: ghcr.io/nkz-os/connectivity-backend@sha256:98d9eafae5b23ba0d287245cd5eb56192629026770e09e09d33b9eb9f4fa3edb
+          image: ghcr.io/nkz-os/nkz-module-conectivity/connectivity-backend@sha256:735d0396c566048be5a6638fc3aa34832861887be225a9e6d32b826679b3dc6f
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
