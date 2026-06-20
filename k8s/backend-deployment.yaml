@@ -49,9 +49,13 @@ spec:
               value: "http://orion-ld-service:1026"
             - name: CONTEXT_URL
               value: "http://api-gateway-service:5000/ngsi-ld-context.json"
-            # CORS
+            # CORS (override via ConfigMap overlay in gitops-config)
+          envFrom:
+            - configMapRef:
+                name: connectivity-config
+                optional: true
             - name: ALLOWED_ORIGINS
-              value: "https://nekazari.robotika.cloud,https://nkz.robotika.cloud"
+              value: "https://YOUR_DOMAIN"
           resources:
             requests:
               memory: "128Mi"
