@@ -49,6 +49,14 @@ spec:
               value: "http://orion-ld-service:1026"
             - name: CONTEXT_URL
               value: "http://api-gateway-service:5000/ngsi-ld-context.json"
+            # HMAC signature verification (api-gateway defense-in-depth)
+            - name: REQUIRE_HMAC_SIGNATURE
+              value: "true"
+            - name: HMAC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: secret
             # CORS (override via ConfigMap overlay in gitops-config)
           envFrom:
             - configMapRef:
