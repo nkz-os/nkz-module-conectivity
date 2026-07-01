@@ -57,13 +57,11 @@ spec:
                 secretKeyRef:
                   name: jwt-secret
                   key: secret
-            # CORS (override via ConfigMap overlay in gitops-config)
+            # CORS — production values from connectivity-config ConfigMap (envFrom)
           envFrom:
             - configMapRef:
                 name: connectivity-config
                 optional: true
-            - name: ALLOWED_ORIGINS
-              value: "https://YOUR_DOMAIN"
           resources:
             requests:
               memory: "128Mi"
