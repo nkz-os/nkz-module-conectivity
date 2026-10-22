@@ -1,0 +1,42 @@
+{
+  "name": "connectivity-module",
+  "version": "1.0.0",
+  "description": "Connectivity - Module for Nekazari Platform",
+  "license": "AGPL-3.0-only",
+  "type": "module",
+  "packageManager": "pnpm@9.0.0",
+  "main": "./src/Module.tsx",
+  "nkz": {
+    "moduleId": "connectivity"
+  },
+  "scripts": {
+    "dev": "vite --port 5003",
+    "build": "vite build",
+    "build:module": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "lucide-react": "^0.424.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.0"
+  },
+  "devDependencies": {
+    "@nekazari/module-builder": "^2.0.3",
+    "@nekazari/module-kit": "^0.6.0",
+    "@nekazari/sdk": "^1.1.0",
+    "@nekazari/ui-kit": "^1.0.2-alpha.4",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.19",
+    "@nekazari/viewer-kit": "^0.2.0-alpha.0",
+    "i18next": "^23.11.0",
+    "postcss": "^8.4.39",
+    "react-i18next": "^17.0.8",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5.2.2",
+    "vite": "^5.3.1"
+  }
+}

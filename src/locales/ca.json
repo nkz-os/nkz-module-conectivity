@@ -1,0 +1,39 @@
+{
+  "app": {
+    "title": "Gestor de connectivitat"
+  },
+  "profiles": {
+    "loading": "Carregant perfils...",
+    "title": "Perfils de dispositiu",
+    "newButton": "Nou perfil",
+    "createTitle": "Crear perfil",
+    "editTitle": "Editar perfil",
+    "nameLabel": "Nom *",
+    "sdmTypeLabel": "Tipus SDM *",
+    "manufacturerLabel": "Fabricant",
+    "modelLabel": "Model",
+    "descriptionLabel": "Descripció",
+    "mappingsTitle": "Mapatges d'atributs",
+    "addMapping": "+ Afegir mapatge",
+    "placeholderIncoming": "Clau entrant (ex.: t)",
+    "placeholderTarget": "Atribut destí (ex.: temperature)",
+    "typeNumber": "Number",
+    "typeText": "Text",
+    "typeBoolean": "Boolean",
+    "placeholderTransform": "Transformació (ex.: val * 100)",
+    "cancel": "Cancel·lar",
+    "save": "Desar",
+    "empty": "No hi ha perfils creats. Crea'n un per començar.",
+    "mappingsCount": "{{count}} mapatges configurats",
+    "confirmDelete": "Eliminar aquest perfil?",
+    "errors": {
+      "unauthorizedFull": "No autoritzat. Torna a iniciar sessió.",
+      "unauthorizedShort": "No autoritzat",
+      "loadProfiles": "Error carregant perfils",
+      "http": "Error {{status}}: {{statusText}}",
+      "httpShort": "Error {{status}}",
+      "save": "Error desant el perfil",
+      "delete": "Error eliminant el perfil"
+    }
+  }
+}

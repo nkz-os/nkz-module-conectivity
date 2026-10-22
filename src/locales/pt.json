@@ -1,0 +1,39 @@
+{
+  "app": {
+    "title": "Gestor de conectividade"
+  },
+  "profiles": {
+    "loading": "A carregar perfis...",
+    "title": "Perfis de dispositivo",
+    "newButton": "Novo perfil",
+    "createTitle": "Criar perfil",
+    "editTitle": "Editar perfil",
+    "nameLabel": "Nome *",
+    "sdmTypeLabel": "Tipo SDM *",
+    "manufacturerLabel": "Fabricante",
+    "modelLabel": "Modelo",
+    "descriptionLabel": "Descrição",
+    "mappingsTitle": "Mapeamentos de atributos",
+    "addMapping": "+ Adicionar mapeamento",
+    "placeholderIncoming": "Chave de entrada (ex.: t)",
+    "placeholderTarget": "Atributo de destino (ex.: temperature)",
+    "typeNumber": "Number",
+    "typeText": "Text",
+    "typeBoolean": "Boolean",
+    "placeholderTransform": "Transformação (ex.: val * 100)",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "empty": "Ainda não há perfis. Crie um para começar.",
+    "mappingsCount": "{{count}} mapeamentos configurados",
+    "confirmDelete": "Eliminar este perfil?",
+    "errors": {
+      "unauthorizedFull": "Não autorizado. Inicie sessão novamente.",
+      "unauthorizedShort": "Não autorizado",
+      "loadProfiles": "Erro ao carregar perfis",
+      "http": "Erro {{status}}: {{statusText}}",
+      "httpShort": "Erro {{status}}",
+      "save": "Erro ao guardar o perfil",
+      "delete": "Erro ao eliminar o perfil"
+    }
+  }
+}

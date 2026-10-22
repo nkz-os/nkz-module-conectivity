@@ -1,0 +1,39 @@
+{
+  "app": {
+    "title": "Gestionnaire de connectivité"
+  },
+  "profiles": {
+    "loading": "Chargement des profils...",
+    "title": "Profils de dispositif",
+    "newButton": "Nouveau profil",
+    "createTitle": "Créer un profil",
+    "editTitle": "Modifier le profil",
+    "nameLabel": "Nom *",
+    "sdmTypeLabel": "Type SDM *",
+    "manufacturerLabel": "Fabricant",
+    "modelLabel": "Modèle",
+    "descriptionLabel": "Description",
+    "mappingsTitle": "Mappages d'attributs",
+    "addMapping": "+ Ajouter un mappage",
+    "placeholderIncoming": "Clé entrante (ex. : t)",
+    "placeholderTarget": "Attribut cible (ex. : temperature)",
+    "typeNumber": "Number",
+    "typeText": "Text",
+    "typeBoolean": "Boolean",
+    "placeholderTransform": "Transformation (ex. : val * 100)",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "empty": "Aucun profil créé. Créez-en un pour commencer.",
+    "mappingsCount": "{{count}} mappages configurés",
+    "confirmDelete": "Supprimer ce profil ?",
+    "errors": {
+      "unauthorizedFull": "Non autorisé. Veuillez vous reconnecter.",
+      "unauthorizedShort": "Non autorisé",
+      "loadProfiles": "Erreur lors du chargement des profils",
+      "http": "Erreur {{status}} : {{statusText}}",
+      "httpShort": "Erreur {{status}}",
+      "save": "Erreur lors de l'enregistrement du profil",
+      "delete": "Erreur lors de la suppression du profil"
+    }
+  }
+}
